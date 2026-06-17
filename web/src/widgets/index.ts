@@ -1,0 +1,5 @@
+export { NumberWidget } from './number-widget'
+export { GaugeWidget } from './gauge-widget'
+export { ChartWidget } from './chart-widget'
+export { TableWidget } from './table-widget'
+export { MetricWidget } from './metric-widget'
