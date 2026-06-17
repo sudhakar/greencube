@@ -1,19 +1,22 @@
+interface NumberConfig {
+  valueField: string
+  trendField?: string
+  trendLabel?: string
+  prefix?: string
+  suffix?: string
+  decimals?: number
+  color?: string
+}
+
 interface NumberWidgetProps {
   data: Record<string, unknown>[]
-  config: {
-    valueField?: string
-    trendField?: string
-    trendLabel?: string
-    prefix?: string
-    suffix?: string
-    decimals?: number
-    color?: string
-  }
+  config: NumberConfig
 }
 
 export function NumberWidget({ data, config }: NumberWidgetProps) {
   if (!data.length) return null
-  const value = data[0][config.valueField ?? ''] as number | undefined
+  const valueField = config.valueField ?? Object.keys(data[0]).find((k) => typeof data[0][k] === 'number') ?? Object.keys(data[0])[0]
+  const value = data[0][valueField] as number | undefined
   const trend = config.trendField ? (data[0][config.trendField] as number | undefined) : undefined
   const formatted = value?.toFixed(config.decimals ?? 0) ?? '—'
 

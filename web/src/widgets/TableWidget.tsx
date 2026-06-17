@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { fieldTitle } from '@/lib/meta'
 
 interface TableConfig {
   pageSize?: number
@@ -69,7 +70,7 @@ export function TableWidget({ data, config }: TableWidgetProps) {
                   className={`cursor-pointer px-2 py-1 text-left font-medium ${config.sortable ? 'hover:text-foreground' : ''}`}
                   onClick={() => handleSort(c)}
                 >
-                  {c}
+                  {fieldTitle(c)}
                   {sortKey === c && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                 </th>
               ))}
@@ -92,9 +93,9 @@ export function TableWidget({ data, config }: TableWidgetProps) {
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{filtered.length} rows</span>
           <div className="flex gap-1">
-            <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="px-1 disabled:opacity-50">‹</button>
+            <button type='button' disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="px-1 disabled:opacity-50">‹</button>
             <span>Page {page + 1} / {totalPages}</span>
-            <button disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} className="px-1 disabled:opacity-50">›</button>
+            <button type='button' disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} className="px-1 disabled:opacity-50">›</button>
           </div>
         </div>
       )}

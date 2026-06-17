@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input'
 import { useReports } from '@/context/ReportContext'
 import { createReport, deleteReport, updateReport } from '@/lib/storage'
 
-export function ReportList() {
+interface ReportListProps {
+  onAddWidget: (id: string) => void
+}
+
+export function ReportList({ onAddWidget }: ReportListProps) {
   const { reports, activeId, setActiveId, refresh } = useReports()
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -88,14 +92,24 @@ export function ReportList() {
                 {r.title}
               </span>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 opacity-0 group-hover:opacity-100"
-              onClick={(e) => handleDelete(r.id, e)}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
+            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={(e) => { e.stopPropagation(); onAddWidget(r.id) }}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={(e) => handleDelete(r.id, e)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>

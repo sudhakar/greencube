@@ -1,14 +1,16 @@
 import { useCallback } from 'react'
 import GridLayout, { useContainerWidth } from 'react-grid-layout'
-import 'react-grid-layout/css/styles.css'
 import { useReports } from '@/context/ReportContext'
 import { useWidgetData } from '@/hooks/useWidgetData'
-import type { WidgetInstance, LayoutItem } from '@/lib/types'
-import { ChartWidget } from '@/widgets/chart-widget'
-import { GaugeWidget } from '@/widgets/gauge-widget'
-import { MetricWidget } from '@/widgets/metric-widget'
-import { NumberWidget } from '@/widgets/number-widget'
-import { TableWidget } from '@/widgets/table-widget'
+import type { LayoutItem, WidgetInstance } from '@/lib/types'
+import { AreaWidget } from '@/widgets/AreaWidget'
+import { BarWidget } from '@/widgets/BarWidget'
+import { GaugeWidget } from '@/widgets/GaugeWidget'
+import { LineWidget } from '@/widgets/LineWidget'
+import { MetricWidget } from '@/widgets/MetricWidget'
+import { NumberWidget } from '@/widgets/NumberWidget'
+import { PieWidget } from '@/widgets/PieWidget'
+import { TableWidget } from '@/widgets/TableWidget'
 import { WidgetFrame } from './widget-frame'
 
 interface WidgetRendererProps {
@@ -36,9 +38,10 @@ function WidgetRenderer({ widget, onEdit, onClone, onDelete }: WidgetRendererPro
     >
       {widget.type === 'number' && <NumberWidget data={data} config={widget.config as never} />}
       {widget.type === 'gauge' && <GaugeWidget data={data} config={widget.config as never} />}
-      {(widget.type === 'bar' || widget.type === 'line' || widget.type === 'area' || widget.type === 'pie') && (
-        <ChartWidget type={widget.type} data={data} config={widget.config as never} />
-      )}
+      {widget.type === 'bar' && <BarWidget data={data} config={widget.config as never} />}
+      {widget.type === 'line' && <LineWidget data={data} config={widget.config as never} />}
+      {widget.type === 'area' && <AreaWidget data={data} config={widget.config as never} />}
+      {widget.type === 'pie' && <PieWidget data={data} config={widget.config as never} />}
       {widget.type === 'table' && <TableWidget data={data} config={widget.config as never} />}
       {widget.type === 'metric' && <MetricWidget data={data} config={widget.config as never} />}
     </WidgetFrame>
@@ -79,12 +82,14 @@ export function ReportGrid({ onEditWidget }: ReportGridProps) {
           onLayoutChange={saveLayout}
           onDragStop={(layout) => saveLayout(layout)}
           onResizeStop={(layout) => saveLayout(layout)}
-          autoSize={false}
+          autoSize={true}
+          dragConfig={{ handle: '.drag-handle' }}
+          resizeConfig={{ handles: ['e', 'se', 'w', 'sw', 's'], }}
           gridConfig={{
-            cols: 12,
-            rowHeight: 120,
-            margin: [10, 10] as [number, number],
-            containerPadding: [10, 10] as [number, number],
+            cols: 40,
+            rowHeight: 12,
+            margin: [2, 2] as [number, number],
+            containerPadding: [0, 0] as [number, number],
           }}
         >
           {report.widgets.map((w) => (

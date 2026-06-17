@@ -1,14 +1,9 @@
+import { AlertCircle, Loader2, RefreshCw } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useState } from 'react'
-import { MoreHorizontal, RefreshCw, AlertCircle, Loader2 } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { ReactNode } from 'react'
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from './ui/context-menu'
 
 interface WidgetFrameProps {
   title: string
@@ -36,24 +31,23 @@ export function WidgetFrame({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border bg-card">
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        <span className="truncate text-sm font-medium">{title}</span>
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
-          <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none">
-            <MoreHorizontal className="h-3 w-3" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-28">
-            <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-            <DropdownMenuItem onClick={onClone}>Clone</DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-destructive">
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <div className="flex h-full flex-col overflow-hidden rounded-sm border border-0 bg-card">
+      <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <ContextMenuTrigger className="justify-center rounded-md p-1 text-muted-foreground">
+          <div className="drag-handle group flex cursor-move justify-between px-3 pt-1.5 pb-1.5">
+            <span className="truncate text-sm font-medium">{title}</span>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent align="end" className="w-28">
+          <ContextMenuItem onClick={onEdit}>Edit</ContextMenuItem>
+          <ContextMenuItem onClick={onClone}>Clone</ContextMenuItem>
+          <ContextMenuItem onClick={onDelete} className="text-destructive">
+            Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
-      <div className="flex-1 overflow-auto p-3">
+      <div className="flex-1 overflow-auto p-0">
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
