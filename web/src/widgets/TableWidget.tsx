@@ -1,104 +1,108 @@
-import { useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { fieldTitle } from '@/lib/meta'
-
-interface TableConfig {
-  pageSize?: number
-  sortable?: boolean
-  searchable?: boolean
-  wrapLines?: boolean
-}
+import { useVirtualizer } from '@tanstack/react-virtual'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  type SortingState,
+} from '@tanstack/react-table'
 
 interface TableWidgetProps {
   data: Record<string, unknown>[]
-  config: TableConfig
 }
 
-export function TableWidget({ data, config }: TableWidgetProps) {
-  const [search, setSearch] = useState('')
-  const [sortKey, setSortKey] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(0)
+export function TableWidget({ data }: TableWidgetProps) {
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [sorting, setSorting] = useState<SortingState>([])
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const columns = useMemo(() => {
+    if (!data.length) return []
+    return Object.keys(data[0]).map((key) => ({
+      id: key,
+      accessorFn: (row: Record<string, unknown>) => row[key],
+      header: fieldTitle(key),
+    }))
+  }, [data])
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: { sorting, globalFilter },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  })
+
+  const rows = table.getRowModel().rows
+  const numCols = table.getVisibleFlatColumns().length
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 28,
+    overscan: 10,
+  })
 
   if (!data.length) return null
 
-  const columns = Object.keys(data[0])
-  const pageSize = config.pageSize ?? 20
-
-  let filtered = data
-  if (config.searchable && search) {
-    const q = search.toLowerCase()
-    filtered = data.filter((row) =>
-      Object.values(row).some((v) => String(v).toLowerCase().includes(q)),
-    )
-  }
-
-  if (config.sortable && sortKey) {
-    filtered = [...filtered].sort((a, b) => {
-      const av = a[sortKey] as number
-      const bv = b[sortKey] as number
-      return sortDir === 'asc' ? (av > bv ? 1 : -1) : av < bv ? 1 : -1
-    })
-  }
-
-  const totalPages = Math.ceil(filtered.length / pageSize)
-  const paged = filtered.slice(page * pageSize, (page + 1) * pageSize)
-
-  const handleSort = (key: string) => {
-    if (!config.sortable) return
-    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else { setSortKey(key); setSortDir('asc') }
-  }
-
   return (
     <div className="flex h-full flex-col gap-2 overflow-hidden">
-      {config.searchable && (
-        <Input
-          placeholder="Search..."
-          className="h-7 text-xs"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0) }}
-        />
-      )}
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-muted">
-              {columns.map((c) => (
-                <th
-                  key={c}
-                  className={`cursor-pointer px-2 py-1 text-left font-medium ${config.sortable ? 'hover:text-foreground' : ''}`}
-                  onClick={() => handleSort(c)}
-                >
-                  {fieldTitle(c)}
-                  {sortKey === c && (sortDir === 'asc' ? ' ↑' : ' ↓')}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {paged.map((row, i) => (
-              <tr key={i} className="border-t">
-                {columns.map((c) => (
-                  <td key={c} className={`px-2 py-1 ${config.wrapLines ? '' : 'whitespace-nowrap'}`}>
-                    {String(row[c] ?? '')}
-                  </td>
-                ))}
-              </tr>
+      <Input
+        placeholder="Search..."
+        className="h-7 text-xs"
+        value={globalFilter}
+        onChange={(e) => setGlobalFilter(e.target.value)}
+      />
+      <div ref={scrollRef} className="flex-1 overflow-auto">
+        <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+          <div
+            className="sticky top-0 z-10 bg-muted"
+            style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}
+          >
+            {table.getHeaderGroups().flatMap((hg) => hg.headers).map((header) => (
+              <div
+                key={header.id}
+                className="cursor-pointer select-none px-2 py-1 text-xs font-medium hover:text-foreground"
+                onClick={header.column.getToggleSortingHandler()}
+              >
+                {String(header.column.columnDef.header ?? '')}
+                {{ asc: ' ↑', desc: ' ↓' }[header.column.getIsSorted() as string] ?? ''}
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{filtered.length} rows</span>
-          <div className="flex gap-1">
-            <button type='button' disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="px-1 disabled:opacity-50">‹</button>
-            <span>Page {page + 1} / {totalPages}</span>
-            <button type='button' disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} className="px-1 disabled:opacity-50">›</button>
           </div>
+          {virtualizer.getVirtualItems().map((vitem) => {
+            const row = rows[vitem.index]
+            return (
+              <div
+                key={row.id}
+                className="border-t"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: `${vitem.size}px`,
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))`,
+                  transform: `translateY(${vitem.start}px)`,
+                }}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <div key={cell.id} className="truncate px-2 py-1 text-xs">
+                    {String(cell.getValue() ?? '')}
+                  </div>
+                ))}
+              </div>
+            )
+          })}
         </div>
-      )}
+      </div>
     </div>
   )
 }

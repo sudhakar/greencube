@@ -12,7 +12,6 @@ pnpm-debug.log*
 dist/
 build/
 out/
-lib/
 coverage/
 .cache/
 /.parcel-cache/

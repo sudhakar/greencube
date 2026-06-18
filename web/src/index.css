@@ -4,20 +4,82 @@
 @import "@fontsource-variable/geist";
 @import 'react-grid-layout/css/styles.css';
 
-/* Position and style the east handle */
-.react-resizable-handle-e {
+/* Hit areas: full-span edge handles */
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n {
   position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  cursor: e-resize;
-  transition: background-color 0.2s;
+  margin: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* Highlight handle on hover */
-.react-resizable-handle-e:hover {
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e {
+  left: calc(100% - 2px); width: 6px;
+  top: 6px; bottom: 6px; height: auto; margin: 0; cursor: col-resize; transform: none;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w {
+  left: calc(0% - 4px); width: 6px;
+  top: 6px; bottom: 6px; height: auto; margin: 0; cursor: col-resize; transform: none;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s {
+  top: calc(100% - 2px); height: 6px;
+  left: 6px; right: 6px; width: auto; margin: 0; cursor: row-resize; transform: none;
+}
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n {
+  top: calc(0% - 4px); height: 6px;
+  left: 6px; right: 6px; width: auto; margin: 0; cursor: row-resize; transform: none;
+}
 
+/* Hide default corner bracket */
+.react-grid-item > .react-resizable-handle::after {
+  all: unset;
+  display: block;
+  content: '';
+  position: absolute;
+  transition: background 0.15s;
+  background: transparent;
+}
+
+/* Vertical lines for e/w */
+.react-grid-item > .react-resizable-handle.react-resizable-handle-e::after,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-w::after {
+  top: 0; bottom: 0; left: 50%; width: 2px; transform: translateX(-50%);
+}
+
+/* Horizontal lines for s/n */
+.react-grid-item > .react-resizable-handle.react-resizable-handle-s::after,
+.react-grid-item > .react-resizable-handle.react-resizable-handle-n::after {
+  left: 0; right: 0; top: 50%; height: 2px; transform: translateY(-50%);
+}
+
+/* Visible line on handle hover (subtle, works on both themes) */
+.react-grid-item > .react-resizable-handle:hover::after {
+  background: color-mix(in oklch, var(--foreground) 30%, transparent);
+}
+
+/* Keep resize cursor during drag */
+.react-grid-item.resizing {
+  cursor: col-resize;
+}
+.react-grid-item.resizing > .react-resizable-handle.react-resizable-handle-s,
+.react-grid-item.resizing > .react-resizable-handle.react-resizable-handle-n {
+  cursor: row-resize;
+}
+
+/* Placeholder — below handles, 6px radius, diagonal stripes */
+.react-grid-item.react-grid-placeholder {
+  border-radius: 6px;
+  z-index: 0;
+  background-color: oklch(0.637 0.237 25.331);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0px,
+    transparent 2px,
+    oklch(0 0 0 / 0.2) 2px,
+    oklch(0 0 0 / 0.2) 5px
+  );
 }
 
 @custom-variant dark (&:is(.dark *));

@@ -42,7 +42,7 @@ function WidgetRenderer({ widget, onEdit, onClone, onDelete }: WidgetRendererPro
       {widget.type === 'line' && <LineWidget data={data} config={widget.config as never} />}
       {widget.type === 'area' && <AreaWidget data={data} config={widget.config as never} />}
       {widget.type === 'pie' && <PieWidget data={data} config={widget.config as never} />}
-      {widget.type === 'table' && <TableWidget data={data} config={widget.config as never} />}
+      {widget.type === 'table' && <TableWidget data={data} />}
       {widget.type === 'metric' && <MetricWidget data={data} config={widget.config as never} />}
     </WidgetFrame>
   )
@@ -52,6 +52,9 @@ interface ReportGridProps {
   onEditWidget?: (widget: WidgetInstance) => void
 }
 
+const cleanLayout = (items: readonly LayoutItem[]) =>
+  items.map((l) => { const c = { ...(l as any) }; delete c.resizeHandles; return c })
+
 export function ReportGrid({ onEditWidget }: ReportGridProps) {
   const { reports, activeId, patchLayout, removeWidget, duplicateWidget } = useReports()
   const report = reports.find((r) => r.id === activeId)
@@ -60,7 +63,7 @@ export function ReportGrid({ onEditWidget }: ReportGridProps) {
 
   const saveLayout = useCallback(
     (layout: readonly LayoutItem[]) => {
-      if (activeId) patchLayout(activeId, layout.map((l) => ({ ...l })))
+      if (activeId) patchLayout(activeId, cleanLayout(layout))
     },
     [activeId, patchLayout],
   )
@@ -78,13 +81,13 @@ export function ReportGrid({ onEditWidget }: ReportGridProps) {
       {width > 0 && (
         <GridLayout
           width={width}
-          layout={report.layout}
+          layout={cleanLayout(report.layout)}
           onLayoutChange={saveLayout}
           onDragStop={(layout) => saveLayout(layout)}
           onResizeStop={(layout) => saveLayout(layout)}
           autoSize={true}
           dragConfig={{ handle: '.drag-handle' }}
-          resizeConfig={{ handles: ['e', 'se', 'w', 'sw', 's'], }}
+          resizeConfig={{ handles: ['e', 'w', 's', 'n', 'se', 'sw', 'ne', 'nw'], }}
           gridConfig={{
             cols: 40,
             rowHeight: 12,

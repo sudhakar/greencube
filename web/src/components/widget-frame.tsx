@@ -31,7 +31,7 @@ export function WidgetFrame({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-sm border border-0 bg-card">
+    <div className="flex h-full flex-col overflow-hidden rounded-sm border border-0 bg-card/80">
       <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <ContextMenuTrigger className="justify-center rounded-md p-1 text-muted-foreground">
           <div className="drag-handle group flex cursor-move justify-between px-3 pt-1.5 pb-1.5">
