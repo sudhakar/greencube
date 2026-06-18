@@ -5,10 +5,17 @@ export const chartColors = [
 
 export const tooltipStyle: React.CSSProperties = {
   background: 'var(--background)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius)',
+  border: '0 none',
+  borderRadius: 4,
   color: 'var(--foreground)',
-  fontSize: 12,
+  fontSize: 10,
+  paddingLeft: 12,
+  paddingTop: 4,
+  paddingRight: 8,
+  paddingBottom: 0,
+
 }
 
-export const axisTickStyle = { fontSize: 11, fill: 'var(--muted-foreground)' }
+export const tooltipCursor = { fill: 'var(--muted)', stroke: 'var(--border)' }
+
+export const axisTickStyle = { fontSize: 10, fill: 'var(--muted-foreground)' }

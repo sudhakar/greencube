@@ -82,6 +82,10 @@
   );
 }
 
+.recharts-tooltip-wrapper {
+  transition-duration: 100ms !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 body {
@@ -138,7 +142,21 @@ body {
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(0.985 0.01 250);
+  /* Card bg alternatives for light mode (current: 0.985 0 0):
+     oklch(0.99 0 0)       — near-white, neutral
+     oklch(0.985 0 0)      — very light neutral gray  ★ (current)
+     oklch(0.98 0 0)       — light neutral gray
+     oklch(0.975 0 0)      — subtle neutral gray
+     oklch(0.99 0.005 250) — barely-there cool blue
+     oklch(0.99 0.005 80)  — barely-there warm
+     oklch(0.985 0.008 200) — subtle cool tint
+     oklch(0.985 0.008 40)  — subtle warm tint
+     oklch(0.982 0.004 180) — muted teal hint
+     oklch(0.982 0.004 60)  — muted golden hint
+     oklch(0.978 0.006 240) — lightest slate  ★ (current)
+     oklch(0.978 0.006 30)  — lightest warm stone
+  */
+  --card: oklch(0.978 0.006 240);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
@@ -151,14 +169,21 @@ body {
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
+  /* Border alternatives matching card hue (240°):
+     oklch(0.94 0.006 240)  — very soft, close to card
+     oklch(0.93 0.006 240)  — good subtle border  ★ (current)
+     oklch(0.92 0.006 240)  — more visible border
+     oklch(0.93 0.004 240)  — lower chroma, neutral-leaning
+     oklch(0.93 0.008 240)  — slightly more saturated
+  */
+  --border: oklch(0.93 0.008 240);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.6 0.2 250);
-  --chart-2: oklch(0.6 0.22 330);
-  --chart-3: oklch(0.65 0.2 160);
-  --chart-4: oklch(0.6 0.2 80);
-  --chart-5: oklch(0.55 0.22 20);
+  --chart-5: oklch(0.6693 0.0706 248.9230);
+  --chart-2: oklch(0.6678 0.1546 41.6200);
+  --chart-3: oklch(0.5957 0.1807 19.9763);
+  --chart-4: oklch(0.7859 0.1342 83.6986);
+  --chart-1: oklch(0.4227 0.0732 267.3899);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -189,11 +214,11 @@ body {
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.6 0.2 250);
-  --chart-2: oklch(0.6 0.22 330);
-  --chart-3: oklch(0.65 0.2 160);
-  --chart-4: oklch(0.55 0.2 80);
-  --chart-5: oklch(0.5 0.22 20);
+  --chart-5: oklch(0.7124 0.0606 248.6896);
+  --chart-2: oklch(0.6678 0.1546 41.6200);
+  --chart-3: oklch(0.5957 0.1807 19.9763);
+  --chart-4: oklch(0.7859 0.1342 83.6986);
+  --chart-1: oklch(0.4227 0.0732 267.3899);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -213,6 +238,9 @@ body {
   }
   html {
     @apply font-sans;
+  }
+  button:not(:disabled), a[href], label, summary, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [role="switch"], [role="checkbox"], [role="radio"] {
+    cursor: pointer;
   }
 }
 

@@ -1,6 +1,6 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { fieldTitle } from '@/lib/meta'
-import { chartColors, tooltipStyle } from './widget-theme'
+import { chartColors, tooltipCursor, tooltipStyle } from './widget-theme'
 
 interface PieConfig {
   labelField: string
@@ -40,7 +40,7 @@ export function PieWidget({ data, config }: PieWidgetProps) {
           ))}
         </Pie>
         {config.showLegend && <Legend formatter={(value: string) => <span style={{ color: 'var(--foreground)' }}>{fieldTitle(value)}</span>} />}
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--muted)', stroke: 'var(--border)' }} />
+        <Tooltip labelStyle={{ fontSize: 10, padding: 0 }} contentStyle={tooltipStyle} cursor={tooltipCursor} />
       </PieChart>
     </ResponsiveContainer>
   )

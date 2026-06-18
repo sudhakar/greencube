@@ -6,6 +6,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     required: ['valueField'],
     properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
       valueField: { type: 'string', title: 'Value Field' },
       trendField: { type: 'string', title: 'Trend Field' },
       prefix: { type: 'string', title: 'Prefix' },
@@ -17,6 +18,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     required: ['valueField'],
     properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
       valueField: { type: 'string', title: 'Value Field' },
       min: { type: 'number', title: 'Min', default: 0 },
       max: { type: 'number', title: 'Max', default: 100 },
@@ -26,6 +28,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     required: ['xField', 'yFields'],
     properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
       xField: { type: 'string', title: 'X-Axis Field' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
       stacked: { type: 'boolean', title: 'Stacked', default: false },
@@ -36,6 +39,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     required: ['xField', 'yFields'],
     properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
       xField: { type: 'string', title: 'X-Axis Field' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
       limit: { type: 'integer', title: 'Limit' },
@@ -45,6 +49,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     required: ['xField', 'yFields'],
     properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
       xField: { type: 'string', title: 'X-Axis Field' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
       stacked: { type: 'boolean', title: 'Stacked', default: false },
@@ -55,6 +60,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     required: ['labelField', 'valueField'],
     properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
       labelField: { type: 'string', title: 'Label Field' },
       valueField: { type: 'string', title: 'Value Field' },
       donut: { type: 'boolean', title: 'Donut', default: false },
@@ -63,6 +69,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
   metric: {
     type: 'object',
     properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
       fields: {
         type: 'array',
         title: 'Metrics',
@@ -81,6 +88,8 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
   },
   table: {
     type: 'object',
-    properties: {},
+    properties: {
+      title: { type: 'string', title: 'Title', default: 'Widget Title' },
+    },
   },
 }

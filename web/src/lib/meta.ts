@@ -1,7 +1,8 @@
 import type { CubeMeta, Field } from './types'
 import { fetchMeta } from './api'
 
-export function resolveField(meta: CubeMeta, qualifiedName: string): Field | undefined {
+export function resolveField(meta: CubeMeta, qualifiedName?: string): Field | undefined {
+  if (!qualifiedName) return undefined
   const [cubeName] = qualifiedName.split('.')
   const cube = meta.cubes.find((c) => c.name === cubeName)
   if (!cube) return undefined
@@ -34,8 +35,8 @@ export async function ensureMeta(): Promise<CubeMeta> {
   return metaCache
 }
 
-export function fieldTitle(name: string): string {
-  if (!metaCache) return name
+export function fieldTitle(name?: string): string {
+  if (!name || !metaCache) return name ?? ''
   const field = resolveField(metaCache, name)
   return field?.title ?? name
 }

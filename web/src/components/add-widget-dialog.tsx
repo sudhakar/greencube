@@ -2,16 +2,12 @@ import Form from '@rjsf/shadcn'
 import validator from '@rjsf/validator-ajv8'
 import type { LucideIcon } from 'lucide-react'
 import {
+  BracesIcon,
   Calculator,
-  Calendar,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
-  CircleDot,
   Columns2,
-  Hash,
-  Sigma,
-  Text,
-  ToggleLeft,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -22,33 +18,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { InputGroup, InputGroupButton, InputGroupTextarea } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Toggle } from '@/components/ui/toggle'
 import { CompactAddButton, CompactArrayItemTemplate, FieldSelect } from '@/components/widget-config'
 import { useReports } from '@/context/ReportContext'
 import { executeQuery, fetchMeta } from '@/lib/api'
 import { addWidget, updateWidget } from '@/lib/storage'
 import type { Cube, CubeMeta, WidgetInstance, WidgetType } from '@/lib/types'
 import { WIDGET_SCHEMAS } from '@/lib/widget-schemas'
+import { AreaWidget } from '@/widgets/AreaWidget'
+import { BarWidget } from '@/widgets/BarWidget'
+import { GaugeWidget } from '@/widgets/GaugeWidget'
+import { LineWidget } from '@/widgets/LineWidget'
+import { MetricWidget } from '@/widgets/MetricWidget'
+import { NumberWidget } from '@/widgets/NumberWidget'
+import { PieWidget } from '@/widgets/PieWidget'
+import { TableWidget } from '@/widgets/TableWidget'
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   measure: Calculator,
   dimension: Columns2,
-}
-
-const TYPE_ICONS: Record<string, LucideIcon> = {
-  count: Sigma, sum: Sigma, avg: Sigma, min: Sigma, max: Sigma,
-  number: Hash, string: Text, time: Calendar, boolean: ToggleLeft,
+  timeDimension: CalendarDays,
 }
 
 function getCatIcon(field: { name: string }, cube: Cube): LucideIcon {
   if (cube.measures.some((m) => m.name === field.name)) return CATEGORY_ICONS.measure
+  if (cube.timeDimensions.some((t) => t.name === field.name)) return CATEGORY_ICONS.timeDimension
   return CATEGORY_ICONS.dimension
-}
-
-function getTypeIcon(type: string): LucideIcon {
-  return TYPE_ICONS[type] ?? CircleDot
 }
 
 const WIDGET_TYPES: { type: WidgetType; label: string; desc: string }[] = [
@@ -62,7 +59,7 @@ const WIDGET_TYPES: { type: WidgetType; label: string; desc: string }[] = [
   { type: 'metric', label: 'Metric', desc: 'Multiple key values' },
 ]
 
-const DEFAULT_QUERY = JSON.stringify({ measures: [], dimensions: [], timeDimensions: [] }, null, 2)
+const DEFAULT_QUERY = JSON.stringify({ dimensions: [], timeDimensions: [], measures: [] }, null, 2)
 
 interface AddWidgetDialogProps {
   open: boolean
@@ -75,26 +72,24 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
   const isEditing = !!editingWidget
 
   const [widgetType, setWidgetType] = useState<WidgetType>('bar')
-  const [title, setTitle] = useState('Bar Chart')
   const [queryText, setQueryText] = useState(DEFAULT_QUERY)
   const [config, setConfig] = useState<Record<string, unknown>>({})
   const [meta, setMeta] = useState<CubeMeta | null>(null)
   const [previewData, setPreviewData] = useState<Record<string, unknown>[] | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [collapsedCubes, setCollapsedCubes] = useState<Record<string, boolean>>({})
-  const [x, setX] = useState(0)
-  const [y, setY] = useState(0)
-  const [w, setW] = useState(24)
-  const [h, setH] = useState(16)
+  const [step, setStep] = useState<'fields' | 'configure'>('fields')
+  const [showQuery, setShowQuery] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (editingWidget) {
+    if (editingWidget && open) {
       setWidgetType(editingWidget.type)
-      setTitle(editingWidget.title)
       setQueryText(JSON.stringify(editingWidget.query, null, 2))
-      setConfig(editingWidget.config as Record<string, unknown>)
+      setConfig({ title: editingWidget.title, ...editingWidget.config as Record<string, unknown> })
+      runPreview(editingWidget.query)
     }
-  }, [editingWidget])
+  }, [editingWidget, open])
 
   useEffect(() => {
     if (open && !meta) {
@@ -102,32 +97,91 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
     }
   }, [open, meta])
 
+  useEffect(() => {
+    if (open && meta && !isEditing && queryText === DEFAULT_QUERY) {
+      const allDims = meta.cubes.flatMap(c => c.dimensions.map(d => d.name))
+      const allTimeDims = meta.cubes.flatMap(c => c.timeDimensions.map(td => td.name))
+      const allMeasures = meta.cubes.flatMap(c => c.measures.map(m => m.name))
+
+      const selectedDims = [...allDims, ...allTimeDims].slice(0, 2)
+      const selectedMeasures = allMeasures.slice(0, 1)
+
+      if (selectedDims.length === 0 && selectedMeasures.length === 0) return
+
+      const dims: string[] = []
+      const timeDims: { dimension: string; granularity: string }[] = []
+
+      for (const d of selectedDims) {
+        const isTime = meta.cubes.some(c => c.timeDimensions.some(td => td.name === d))
+        if (isTime) timeDims.push({ dimension: d, granularity: 'day' })
+        else dims.push(d)
+      }
+
+      const query = { dimensions: dims, timeDimensions: timeDims, measures: selectedMeasures }
+      setQueryText(JSON.stringify(query, null, 2))
+      runPreview(query)
+    }
+  }, [open, meta, isEditing, queryText])
+
   const handleClose = (open: boolean) => {
     onOpenChange(open)
     if (!open) {
       setWidgetType('bar')
-      setTitle('Bar Chart')
       setQueryText(DEFAULT_QUERY)
       setConfig({})
       setPreviewData(null)
-      setX(0); setY(0); setW(4); setH(3)
+      setPreviewError(null)
+      setShowQuery(false)
+      setStep('fields')
     }
   }
 
   const runPreview = async (query: object) => {
     try {
       setPreviewLoading(true)
-      const result = await executeQuery(query)
-      setPreviewData(result.data)
-    } catch {
+      setPreviewError(null)
+      const result = await executeQuery({ ...query, limit: 100 })
+      setPreviewData(result.data ?? [])
+    } catch (e) {
       setPreviewData([])
+      setPreviewError(e instanceof Error ? e.message : 'Query failed')
     } finally {
       setPreviewLoading(false)
     }
   }
 
   const handlePreview = () => {
-    try { runPreview(JSON.parse(queryText)) } catch { setPreviewData([]) }
+    try { runPreview(JSON.parse(queryText)) } catch (e) { setPreviewData([]); setPreviewError(e instanceof Error ? e.message : 'Invalid query') }
+  }
+
+  const deriveConfig = (widgetType: WidgetType): Record<string, unknown> => {
+    try {
+      const q = JSON.parse(queryText)
+      const measures: string[] = q.measures ?? []
+      const dimensions: string[] = q.dimensions ?? []
+      const timeDims: string[] = (q.timeDimensions ?? []).map((td: { dimension: string }) => td.dimension)
+      const firstMeasure = measures[0] ?? ''
+      const firstDim = dimensions[0] ?? timeDims[0] ?? ''
+
+      switch (widgetType) {
+        case 'bar':
+        case 'line':
+        case 'area':
+          return { title: 'Widget Title', xField: firstDim, yFields: measures.length ? measures : [''] }
+        case 'pie':
+          return { title: 'Widget Title', labelField: firstDim, valueField: firstMeasure }
+        case 'number':
+          return { title: 'Widget Title', valueField: firstMeasure }
+        case 'gauge':
+          return { title: 'Widget Title', valueField: firstMeasure }
+        case 'metric':
+          return { title: 'Widget Title', fields: measures.length ? measures.map((m: string) => ({ label: m, valueField: m })) : [{ label: '', valueField: '' }] }
+        case 'table':
+          return { title: 'Widget Title' }
+      }
+    } catch {
+      return {}
+    }
   }
 
   const isFieldSelected = (fieldName: string): boolean => {
@@ -213,16 +267,18 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
   const handleFinish = () => {
     if (!widgetType || !activeId) return
     const query = JSON.parse(queryText)
+    const { title: rawTitle, ...configRest } = config
+    const widgetTitle = ((rawTitle as string) ?? '').trim() || widgetType
 
     if (isEditing && editingWidget) {
       updateWidget(activeId, editingWidget.id, {
-        title: title || widgetType,
+        title: widgetTitle,
         type: widgetType,
         query,
-        config,
+        config: configRest,
       })
     } else {
-      addWidget(activeId, widgetType, title || widgetType, query, config, { x, y, w, h })
+      addWidget(activeId, widgetType, widgetTitle, query, configRest, { x: 0, y: 0, w: 24, h: 16 })
     }
     refresh()
     handleClose(false)
@@ -261,121 +317,88 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="flex flex-col gap-0" style={{ minWidth: '80vw', maxHeight: '80vh' }}>
+      <DialogContent className="flex flex-col gap-0" style={{ minWidth: '800px', height: '600px' }}>
         <DialogHeader className="shrink-0 mb-4">
-          <DialogTitle>{isEditing ? 'Edit Widget' : 'Add Widget'}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {isEditing ? 'Edit Widget' : step === 'fields' ? 'Add Widget' : 'Configure Widget'}
+            {step === 'fields' && (
+              <Toggle size="sm" variant="default" pressed={showQuery} onPressedChange={(p) => setShowQuery(p)} aria-label="Show/hide query" className="h-6 w-6">
+                <BracesIcon className="size-4" />
+              </Toggle>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden overflow-y-auto">
-          {!isEditing && (
-            <div className="flex flex-row gap-2 flex-wrap justify-center">
-              {WIDGET_TYPES.map((wt) => (
-                <Button
-                  key={wt.type}
-                  variant={widgetType === wt.type ? 'default' : 'outline'}
-                  size="sm"
-                  className="flex flex-col items-center justify-center gap-0.5 h-14 w-[120px] px-2"
-                  onClick={() => { setWidgetType(wt.type); setTitle(wt.label) }}
-                >
-                  <span className="text-xs font-medium">{wt.label}</span>
-                  <span className="text-[9px] text-muted-foreground leading-tight text-wrap">{wt.desc}</span>
-                </Button>
-              ))}
-            </div>
-          )}
+        <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden pt-1">
+          {step === 'fields' && (
+            <div className="grid grid-cols-[7fr_3fr] gap-4 flex-1 min-h-0">
+              <div className="flex flex-col gap-3 min-w-0 min-h-0">
+                {showQuery && (
+                  <InputGroup className="h-auto relative rounded-[min(var(--radius-md),8px)]">
+                    <InputGroupTextarea className="min-h-50 max-h-50 font-mono md:text-[10px] pb-7 leading-tight" value={queryText} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setQueryText(e.target.value)} />
+                    <InputGroupButton size="xs" variant="outline" onClick={handlePreview} disabled={previewLoading} className="absolute bottom-1 right-1 z-10">
+                      {previewLoading ? 'Loading...' : 'Preview'}
+                    </InputGroupButton>
+                  </InputGroup>
+                )}
 
-          <div className="grid grid-cols-[50%_50%] gap-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Title</Label>
-                <Input value={title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)} />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs">Query (JSON)</Label>
-                <Textarea
-                  className="min-h-[120px] font-mono text-xs"
-                  value={queryText}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setQueryText(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={handlePreview} disabled={previewLoading}>
-                  {previewLoading ? 'Loading...' : 'Preview'}
-                </Button>
-              </div>
-
-              {previewData && (
-                <div className="max-h-40 overflow-auto rounded border text-xs">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-muted">
-                        {Object.keys(previewData[0] || {}).map((k) => (
-                          <th key={k} className="px-2 py-1 text-left font-medium">{k}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewData.map((row, i) => (
-                        <tr key={i} className="border-t">
-                          {Object.values(row).map((v, j) => (
-                            <td key={j} className="px-2 py-1">{String(v ?? '')}</td>
+                <div className="flex-1 min-h-0 pb-3">
+                  {previewError && (
+                    <div className="h-full overflow-auto rounded border border-red-300 bg-red-50 text-xs p-2 text-red-700">
+                      {previewError}
+                    </div>
+                  )}
+                  {!previewError && previewData && previewData.length > 0 && (
+                    <div className="h-full overflow-auto rounded border text-xs">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            {Object.keys(previewData[0] || {}).map((k) => (
+                              <th key={k} className="sticky top-0 z-10 bg-muted px-2 py-1 text-left font-medium">{k}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewData.map((row, i) => (
+                            <tr key={i} className="border-t">
+                              {Object.values(row).map((v, j) => (
+                                <td key={j} className="px-2 py-1">{String(v ?? '')}</td>
+                              ))}
+                            </tr>
                           ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {!previewError && previewData !== null && previewData.length === 0 && (
+                    <div className="h-full overflow-auto rounded border border-dashed text-xs p-4 text-center text-muted-foreground">
+                      No data. Run a query to see results.
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="flex flex-col gap-3 min-h-0">
-              {!isEditing && (
-                <div>
-                  <Label className="text-xs mb-1.5 block">Layout</Label>
-                  <div className="grid grid-cols-4 gap-1">
-                    <div className="flex flex-row items-center gap-1">
-                      <Label className="text-[10px] shrink-0">X</Label>
-                      <Input type="number" value={x} className='w-14' onChange={(e: React.ChangeEvent<HTMLInputElement>) => setX(Number(e.target.value))} />
-                    </div>
-                    <div className="flex flex-row items-center gap-1">
-                      <Label className="text-[10px] shrink-0">Y</Label>
-                      <Input type="number" value={y} className='w-14' onChange={(e: React.ChangeEvent<HTMLInputElement>) => setY(Number(e.target.value))} />
-                    </div>
-                    <div className="flex flex-row items-center gap-1">
-                      <Label className="text-[10px] shrink-0">W</Label>
-                      <Input type="number" value={w} className='w-14' onChange={(e: React.ChangeEvent<HTMLInputElement>) => setW(Number(e.target.value))} />
-                    </div>
-                    <div className="flex flex-row items-center gap-1">
-                      <Label className="text-[10px] shrink-0">H</Label>
-                      <Input type="number" value={h} className='w-14' onChange={(e: React.ChangeEvent<HTMLInputElement>) => setH(Number(e.target.value))} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {meta && (
-                <div className="flex flex-col gap-2">
-                  <Label className="text-xs">Available Fields</Label>
-                  {(() => {
-                    const cubes = meta.cubes
-                    const mid = Math.ceil(cubes.length / 2)
-                    const renderCube = (cube: Cube) => {
+              <div className="flex flex-col gap-3 min-w-0 min-h-0 overflow-y-auto">
+                {meta && (
+                  <div className="flex flex-col gap-2">
+                    {meta.cubes.map((cube: Cube) => {
                       const cs = cubeState[cube.name] ?? 'none'
+                      const measuresSorted = [...cube.measures].sort((a, b) => a.name.localeCompare(b.name))
+                      const dimensionsSorted = [...cube.dimensions].sort((a, b) => a.name.localeCompare(b.name))
+                      const timeDimensionsSorted = [...cube.timeDimensions].sort((a, b) => a.name.localeCompare(b.name))
                       const allFields = [...cube.measures, ...cube.dimensions, ...cube.timeDimensions]
                       const total = allFields.length
                       const selected = allFields.filter((f) => isFieldSelected(f.name)).length
                       const collapsed = collapsedCubes[cube.name] ?? true
                       return (
-                        <div key={cube.name} className="rounded border overflow-hidden">
+                        <div key={cube.name} className="rounded border border-muted">
                           <table className="w-full">
                             <thead>
                               <tr
-                                className="bg-muted/50 cursor-pointer select-none"
+                                className="sticky top-0 z-10 cursor-pointer select-none"
                                 onClick={() => setCollapsedCubes((prev) => ({ ...prev, [cube.name]: !collapsed }))}
                               >
-                                <td className="w-4 px-1 pt-0.5">
+                                <td className="w-4 px-1 pt-0.5 bg-muted">
                                   <Checkbox
                                     size="xs"
                                     checked={cs === 'all' ? true : cs === 'some' ? 'indeterminate' : false}
@@ -383,91 +406,186 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                                     onCheckedChange={() => toggleCube(cube.name)}
                                   />
                                 </td>
-                                <td className="px-0 py-1 text-[10px] font-semibold">
-                                  <div className="flex items-center gap-1.5">
-                                    <span>{cube.name}</span>
-                                    <span className="text-[9px] text-muted-foreground">({selected}/{total})</span>
-                                    <button
-                                      type="button"
-                                      className="ml-auto outline-none"
-                                      onClick={(e) => { e.stopPropagation(); setCollapsedCubes((prev) => ({ ...prev, [cube.name]: !collapsed })) }}
-                                    >
-                                      {collapsed ? <ChevronRight className="size-3" /> : <ChevronDown className="size-3" />}
-                                    </button>
+                                <td colSpan={2} className="flex-1 px-0 py-1 text-[10px] font-semibold bg-muted">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <span>{cube.name}</span>
+                                    </div>
+                                    <div className='flex'>
+                                      <span className="text-[9px] text-muted-foreground">({selected}/{total})</span>
+
+                                      <button
+                                        type="button"
+                                        className="flex items-center justify-center px-1 outline-none"
+                                        onClick={(e) => { e.stopPropagation(); setCollapsedCubes((prev) => ({ ...prev, [cube.name]: !collapsed })) }}
+                                      >
+                                        {collapsed ? <ChevronRight className="size-3" /> : <ChevronDown className="size-3" />}
+                                      </button>
+                                    </div>
                                   </div>
                                 </td>
-                                <td className="w-30 px-2 py-1" />
                               </tr>
                             </thead>
                             {!collapsed && (
                               <tbody>
-                                {allFields.sort((a, b) => a.name.localeCompare(b.name)).map((f) => {
-                                  const CatIcon = getCatIcon(f, cube)
-                                  const TypeIcon = getTypeIcon(f.type)
-                                  const shortName = f.name.startsWith(cube.name + '.') ? f.name.slice(cube.name.length + 1) : f.name
-                                  return (
-                                    <tr key={f.name} className="border-t">
-                                      <td className="w-4 px-1 pt-0.5">
-                                        <Checkbox
-                                          size="xs"
-                                          checked={isFieldSelected(f.name)}
-                                          onCheckedChange={() => toggleField(f.name)}
-                                        />
-                                      </td>
-                                      <td className="px-0 py-1 font-mono text-[10px]">
-                                        <CatIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />
-                                        {shortName}
-                                      </td>
-                                      <td className="w-30 px-2 py-1 text-[9px] text-muted-foreground">
-                                        <TypeIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />
-                                        {f.type}
-                                      </td>
+                                {dimensionsSorted.length > 0 && (
+                                  <>
+                                    <tr className="sticky top-[22px] z-10 border-t border-muted bg-popover">
+                                      <td colSpan={3} className="px-2 py-0.5 text-[9px] text-muted-foreground uppercase tracking-wider text-center">Dimensions</td>
                                     </tr>
-                                  )
-                                })}
+                                    {dimensionsSorted.map((f) => {
+                                      const CatIcon = getCatIcon(f, cube)
+                                      const shortName = f.name.startsWith(cube.name + '.') ? f.name.slice(cube.name.length + 1) : f.name
+                                      return (
+                                        <tr key={f.name} className="cursor-pointer border-t border-muted hover:bg-muted/20" onClick={() => toggleField(f.name)}>
+                                          <td className="w-4 px-1 pt-0.5">
+                                            <Checkbox size="xs" checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
+                                          </td>
+                                          <td className="px-0 py-1 text-[10px]">
+                                            <CatIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />
+                                            {shortName}
+                                          </td>
+                                          <td className="w-20 truncate px-2 py-1 text-[10px] text-muted-foreground">{f.type}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </>
+                                )}
+                                {timeDimensionsSorted.length > 0 && (
+                                  <>
+                                    <tr className="sticky top-[22px] z-10 border-t border-muted bg-popover">
+                                      <td colSpan={3} className="px-2 py-0.5 text-[9px] text-muted-foreground uppercase tracking-wider text-center">Time Dimensions</td>
+                                    </tr>
+                                    {timeDimensionsSorted.map((f) => {
+                                      const CatIcon = getCatIcon(f, cube)
+                                      const shortName = f.name.startsWith(cube.name + '.') ? f.name.slice(cube.name.length + 1) : f.name
+                                      return (
+                                        <tr key={f.name} className="cursor-pointer border-t border-muted hover:bg-muted/20" onClick={() => toggleField(f.name)}>
+                                          <td className="w-4 px-1 pt-0.5">
+                                            <Checkbox size="xs" checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
+                                          </td>
+                                          <td className="px-0 py-1 text-[10px]">
+                                            <CatIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />
+                                            {shortName}
+                                          </td>
+                                          <td className="w-20 truncate px-2 py-1 text-[10px] text-muted-foreground">{f.type}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </>
+                                )}
+                                {measuresSorted.length > 0 && (
+                                  <>
+                                    <tr className="sticky top-[22px] z-10 border-t border-muted bg-popover">
+                                      <td colSpan={3} className="px-2 py-0.5 text-[9px] text-muted-foreground uppercase tracking-wider text-center">Measures</td>
+                                    </tr>
+                                    {measuresSorted.map((f) => {
+                                      const CatIcon = getCatIcon(f, cube)
+                                      const shortName = f.name.startsWith(cube.name + '.') ? f.name.slice(cube.name.length + 1) : f.name
+                                      return (
+                                        <tr key={f.name} className="cursor-pointer border-t border-muted hover:bg-muted/20" onClick={() => toggleField(f.name)}>
+                                          <td className="w-4 px-1 pt-0.5">
+                                            <Checkbox size="xs" checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
+                                          </td>
+                                          <td className="px-0 py-1 text-[10px]">
+                                            <CatIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />
+                                            {shortName}
+                                          </td>
+                                          <td className="w-20 truncate px-2 py-1 text-[10px] text-muted-foreground">{f.type}</td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </>
+                                )}
                               </tbody>
                             )}
                           </table>
                         </div>
                       )
-                    }
-                    return (
-                      <div className="flex gap-2">
-                        <div className="flex flex-1 flex-col gap-2">{cubes.slice(0, mid).map(renderCube)}</div>
-                        <div className="flex flex-1 flex-col gap-2">{cubes.slice(mid).map(renderCube)}</div>
-                      </div>
-                    )
-                  })()}
-                </div>
-              )}
-
-              {widgetType && (
-                <div className="border-t pt-2">
-                  <Label className="text-xs mb-1 block">Widget Config</Label>
-                  <div className="max-h-48 overflow-auto">
-                    <Form
-                      schema={WIDGET_SCHEMAS[widgetType]}
-                      formData={config}
-                      validator={validator}
-                      uiSchema={uiSchema}
-                      widgets={{ fieldSelect: FieldSelect }}
-                      templates={{ ArrayFieldItemTemplate: CompactArrayItemTemplate, ButtonTemplates: { AddButton: CompactAddButton } }}
-                      onChange={(e) => setConfig(e.formData)}
-                    >
-                      <></>
-                    </Form>
+                    })}
                   </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 'configure' && (
+            <>
+              {!isEditing && (
+                <div className="flex flex-row gap-2">
+                  {WIDGET_TYPES.map((wt) => (
+                    <Button
+                      key={wt.type}
+                      variant={widgetType === wt.type ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex flex-col justify-start h-14 w-[100px] px-2 py-2 gap-0"
+                      onClick={() => { setWidgetType(wt.type); setConfig(prev => ({ ...prev, title: wt.label })) }}
+                    >
+                      <span className="text-xs font-medium">{wt.label}</span>
+                      <span className="text-[9px] text-muted-foreground leading-tight text-wrap">{wt.desc}</span>
+                    </Button>
+                  ))}
                 </div>
               )}
-            </div>
-          </div>
+              <div className="grid grid-cols-[7fr_3fr] grid-rows-1 gap-4 flex-1 min-h-0">
+                <div className="flex flex-col gap-3 min-w-0 min-h-0">
+                  {previewData && previewData.length > 0 ? (
+                    <div className="flex-1 overflow-auto rounded border min-h-0 p-1">
+                      {widgetType === 'number' && <NumberWidget data={previewData} config={config as never} />}
+                      {widgetType === 'gauge' && <GaugeWidget data={previewData} config={config as never} />}
+                      {widgetType === 'bar' && <BarWidget data={previewData} config={config as never} />}
+                      {widgetType === 'line' && <LineWidget data={previewData} config={config as never} />}
+                      {widgetType === 'area' && <AreaWidget data={previewData} config={config as never} />}
+                      {widgetType === 'pie' && <PieWidget data={previewData} config={config as never} />}
+                      {widgetType === 'table' && <TableWidget data={previewData} />}
+                      {widgetType === 'metric' && <MetricWidget data={previewData} config={config as never} />}
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground min-h-0">
+                      No data. Go back and configure your query.
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-3 min-w-0 min-h-0 overflow-y-auto">
+                  {widgetType && (
+                    <div>
+                      <Label className="text-xs mb-1 block">Widget Config</Label>
+                      <Form
+                        schema={WIDGET_SCHEMAS[widgetType]}
+                        formData={config}
+                        validator={validator}
+                        uiSchema={uiSchema}
+                        widgets={{ fieldSelect: FieldSelect }}
+                        templates={{ ArrayFieldItemTemplate: CompactArrayItemTemplate, ButtonTemplates: { AddButton: CompactAddButton } }}
+                        onChange={(e) => setConfig(e.formData)}
+                      >
+                        <></>
+                      </Form>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-2 border-t shrink-0">
-          <Button variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
-          <Button onClick={handleFinish} disabled={!widgetType}>
-            {isEditing ? 'Save' : 'Add Widget'}
-          </Button>
+          {step === 'fields' ? (
+            <>
+              <Button variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
+              <Button onClick={() => { setConfig(deriveConfig(widgetType)); setStep('configure'); handlePreview() }}>
+                Next
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setStep('fields')}>Back</Button>
+              <Button onClick={handleFinish} disabled={!widgetType}>
+                {isEditing ? 'Save' : 'Add Widget'}
+              </Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
