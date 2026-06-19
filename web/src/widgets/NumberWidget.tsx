@@ -1,3 +1,5 @@
+import { formatValue } from './widget-theme'
+
 interface NumberConfig {
   valueField: string
   trendField?: string
@@ -6,6 +8,7 @@ interface NumberConfig {
   suffix?: string
   decimals?: number
   color?: string
+  valueFormat?: string
 }
 
 interface NumberWidgetProps {
@@ -16,9 +19,10 @@ interface NumberWidgetProps {
 export function NumberWidget({ data, config }: NumberWidgetProps) {
   if (!data.length) return null
   const valueField = config.valueField ?? Object.keys(data[0]).find((k) => typeof data[0][k] === 'number') ?? Object.keys(data[0])[0]
-  const value = data[0][valueField] as number | undefined
+  const raw = data[0][valueField]
+  const value = typeof raw === 'number' ? raw : Number(raw)
   const trend = config.trendField ? (data[0][config.trendField] as number | undefined) : undefined
-  const formatted = value?.toFixed(config.decimals ?? 0) ?? '—'
+  const formatted = isNaN(value) ? '—' : formatValue(value, config.valueFormat, 'number')
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-1">

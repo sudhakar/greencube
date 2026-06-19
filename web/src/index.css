@@ -179,11 +179,16 @@ body {
   --border: oklch(0.93 0.008 240);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-5: oklch(0.6693 0.0706 248.9230);
+  /* --chart-5: oklch(0.6693 0.0706 248.9230);
   --chart-2: oklch(0.6678 0.1546 41.6200);
   --chart-3: oklch(0.5957 0.1807 19.9763);
   --chart-4: oklch(0.7859 0.1342 83.6986);
-  --chart-1: oklch(0.4227 0.0732 267.3899);
+  --chart-1: oklch(0.4227 0.0732 267.3899); */
+  --chart-1: hsla(210, 100%, 35%, 1);
+  --chart-2: hsla(12, 76%, 61%, 1);
+  --chart-3: hsla(0, 0%, 89%, 1);
+  --chart-4: hsla(27, 87%, 67%, 1);
+  --chart-5: hsla(43, 74%, 66%, 1);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -214,11 +219,17 @@ body {
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-5: oklch(0.7124 0.0606 248.6896);
+  /* --chart-5: oklch(0.7124 0.0606 248.6896);
   --chart-2: oklch(0.6678 0.1546 41.6200);
   --chart-3: oklch(0.5957 0.1807 19.9763);
   --chart-4: oklch(0.7859 0.1342 83.6986);
-  --chart-1: oklch(0.4227 0.0732 267.3899);
+  --chart-1: oklch(0.4227 0.0732 267.3899); */
+  --chart-1: hsla(210, 100%, 35%, 1);
+  --chart-2: hsla(12, 76%, 61%, 1);
+  --chart-3: hsla(0, 0%, 89%, 1);
+  --chart-4: hsla(27, 87%, 67%, 1);
+  --chart-5: hsla(43, 74%, 66%, 1);
+
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -246,4 +257,20 @@ body {
 
 .recharts-responsive-container * {
   outline: none;
+}
+
+/* xs sizing for RJSF widgets config form */
+.widget-config-xs label {
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+.widget-config-xs legend {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+}
+.widget-config-xs [data-slot="input"] {
+  height: 1.5rem !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+  padding: 2px 6px !important;
 }

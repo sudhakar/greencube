@@ -1,23 +1,47 @@
-import { useMemo, useRef, useState } from 'react'
+import { type ReactNode, useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { fieldTitle } from '@/lib/meta'
+import { fieldTitle, fieldType } from '@/lib/meta'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
+  flexRender,
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
   type SortingState,
 } from '@tanstack/react-table'
+import { formatValue } from './widget-theme'
+
+interface ColumnFormat {
+  field: string
+  format?: string
+  prefix?: string
+  precision?: number
+}
+
+interface TableConfig {
+  columnFormats?: ColumnFormat[]
+}
 
 interface TableWidgetProps {
   data: Record<string, unknown>[]
+  config?: TableConfig
 }
 
-export function TableWidget({ data }: TableWidgetProps) {
+export function TableWidget({ data, config }: TableWidgetProps) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const formatMap = useMemo(() => {
+    const map: Record<string, { format: string; prefix?: string; precision?: number }> = {}
+    if (config?.columnFormats) {
+      for (const cf of config.columnFormats) {
+        if (cf.field) map[cf.field] = { format: cf.format ?? '', prefix: cf.prefix, precision: cf.precision }
+      }
+    }
+    return map
+  }, [config])
 
   const columns = useMemo(() => {
     if (!data.length) return []
@@ -25,8 +49,18 @@ export function TableWidget({ data }: TableWidgetProps) {
       id: key,
       accessorFn: (row: Record<string, unknown>) => row[key],
       header: fieldTitle(key),
+      cell: (info: { getValue: () => unknown }) => {
+        const raw = info.getValue()
+        const fm = formatMap[key]
+        const fmt = fm?.format ?? ''
+        const prefix = fm?.prefix
+        const precision = fm?.precision
+        const ft = fieldType(key)
+        const norm = ft === 'time' ? 'time' : ft === 'number' || ft === 'integer' || ft === 'float' ? 'number' : 'string'
+        return String(formatValue(raw, fmt, norm, prefix, precision))
+      },
     }))
-  }, [data])
+  }, [data, formatMap])
 
   const table = useReactTable({
     data,
@@ -95,7 +129,7 @@ export function TableWidget({ data }: TableWidgetProps) {
               >
                 {row.getVisibleCells().map((cell) => (
                   <div key={cell.id} className="truncate px-2 py-1 text-xs">
-                    {String(cell.getValue() ?? '')}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext()) as ReactNode}
                   </div>
                 ))}
               </div>

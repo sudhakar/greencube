@@ -35,6 +35,11 @@ export async function ensureMeta(): Promise<CubeMeta> {
   return metaCache
 }
 
+export function fieldType(name?: string): string | undefined {
+  if (!name || !metaCache) return undefined
+  return resolveField(metaCache, name)?.type
+}
+
 export function fieldTitle(name?: string): string {
   if (!name || !metaCache) return name ?? ''
   const field = resolveField(metaCache, name)

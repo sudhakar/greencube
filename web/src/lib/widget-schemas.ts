@@ -8,6 +8,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
       valueField: { type: 'string', title: 'Value Field' },
+      valueFormat: { type: 'string', title: 'Value Format', default: 'auto' },
       trendField: { type: 'string', title: 'Trend Field' },
       prefix: { type: 'string', title: 'Prefix' },
       suffix: { type: 'string', title: 'Suffix' },
@@ -20,6 +21,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
       valueField: { type: 'string', title: 'Value Field' },
+      valueFormat: { type: 'string', title: 'Value Format', default: 'auto' },
       min: { type: 'number', title: 'Min', default: 0 },
       max: { type: 'number', title: 'Max', default: 100 },
     },
@@ -30,7 +32,9 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
       xField: { type: 'string', title: 'X-Axis Field' },
+      xFormat: { type: 'string', title: 'X-Axis Format', default: 'auto' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
+      yFormat: { type: 'string', title: 'Y-Axis Format', default: 'auto' },
       stacked: { type: 'boolean', title: 'Stacked', default: false },
       limit: { type: 'integer', title: 'Limit' },
     },
@@ -41,7 +45,9 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
       xField: { type: 'string', title: 'X-Axis Field' },
+      xFormat: { type: 'string', title: 'X-Axis Format', default: 'auto' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
+      yFormat: { type: 'string', title: 'Y-Axis Format', default: 'auto' },
       limit: { type: 'integer', title: 'Limit' },
     },
   },
@@ -51,7 +57,9 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
       xField: { type: 'string', title: 'X-Axis Field' },
+      xFormat: { type: 'string', title: 'X-Axis Format', default: 'auto' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
+      yFormat: { type: 'string', title: 'Y-Axis Format', default: 'auto' },
       stacked: { type: 'boolean', title: 'Stacked', default: false },
       limit: { type: 'integer', title: 'Limit' },
     },
@@ -63,6 +71,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
       labelField: { type: 'string', title: 'Label Field' },
       valueField: { type: 'string', title: 'Value Field' },
+      valueFormat: { type: 'string', title: 'Value Format', default: 'auto' },
       donut: { type: 'boolean', title: 'Donut', default: false },
     },
   },
@@ -78,6 +87,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
           properties: {
             label: { type: 'string', title: 'Label' },
             valueField: { type: 'string', title: 'Value Field' },
+            valueFormat: { type: 'string', title: 'Format', default: 'auto' },
             prefix: { type: 'string', title: 'Prefix' },
             suffix: { type: 'string', title: 'Suffix' },
           },
@@ -90,6 +100,21 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
+      columnFormats: {
+        type: 'array',
+        title: 'Format Column',
+        items: {
+          type: 'object',
+          title: ' ',
+          properties: {
+            field: { type: 'string' },
+            prefix: { type: 'string', default: '' },
+            format: { type: 'string', default: 'none' },
+            precision: { type: 'integer', default: 0, minimum: 0, maximum: 9 },
+          },
+          required: ['field'],
+        },
+      },
     },
   },
 }

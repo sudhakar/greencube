@@ -1,11 +1,11 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { fieldTitle } from '@/lib/meta'
-import { chartColors, tooltipCursor, tooltipStyle } from './widget-theme'
+import { chartColors, formatValue, legendFormatter, tooltipCursor, tooltipStyle } from './widget-theme'
 
 interface PieConfig {
   labelField: string
   valueField: string
   donut?: boolean
+  valueFormat?: string
   showPercent?: boolean
   showLegend?: boolean
   maxSlices?: number
@@ -39,8 +39,8 @@ export function PieWidget({ data, config }: PieWidgetProps) {
             <Cell key={i} fill={chartColors[i % chartColors.length]} />
           ))}
         </Pie>
-        {config.showLegend && <Legend formatter={(value: string) => <span style={{ color: 'var(--foreground)' }}>{fieldTitle(value)}</span>} />}
-        <Tooltip labelStyle={{ fontSize: 10, padding: 0 }} contentStyle={tooltipStyle} cursor={tooltipCursor} />
+        {config.showLegend && <Legend formatter={legendFormatter} />}
+        <Tooltip labelStyle={{ fontSize: 10, padding: 0 }} contentStyle={tooltipStyle} cursor={tooltipCursor} formatter={(value) => formatValue(value, config.valueFormat, 'number')} />
       </PieChart>
     </ResponsiveContainer>
   )

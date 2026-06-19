@@ -1,4 +1,5 @@
 import { fieldTitle } from '@/lib/meta'
+import { formatValue } from './widget-theme'
 
 interface MetricField {
   label: string
@@ -6,7 +7,7 @@ interface MetricField {
   prefix?: string
   suffix?: string
   color?: string
-  formatter?: string
+  valueFormat?: string
 }
 
 interface MetricConfig {
@@ -33,8 +34,9 @@ export function MetricWidget({ data, config }: MetricWidgetProps) {
     <div className="flex h-full flex-col justify-center gap-3 p-2">
       {fields.map((f, i) => {
         const effectiveField = f.valueField in data[0] ? f.valueField : Object.keys(data[0]).find((k) => typeof data[0][k] === 'number') ?? Object.keys(data[0])[0]
-        const value = data[0][effectiveField] as number | undefined
-        const formatted = value?.toFixed(2) ?? '—'
+        const raw = data[0][effectiveField]
+        const value = typeof raw === 'number' ? raw : Number(raw)
+        const formatted = isNaN(value) ? '—' : formatValue(value, f.valueFormat, 'number')
         return (
           <div key={i} className="flex flex-col items-center gap-2">
             <span className="text-lg font-semibold" style={{ color: f.color }}>

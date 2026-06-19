@@ -19,11 +19,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { InputGroup, InputGroupButton, InputGroupTextarea } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
 import { Toggle } from '@/components/ui/toggle'
-import { CompactAddButton, CompactArrayItemTemplate, FieldSelect } from '@/components/widget-config'
+import { CompactAddButton, CompactArrayFieldTemplate, CompactArrayFieldTitleTemplate, CompactArrayItemTemplate, CompactObjectFieldTemplate, FieldSelect, FlatFormatList, FormatSelect, MultiFieldSelect, PrefixSelect, TitleWidget, XsBaseInputTemplate } from '@/components/widget-config'
 import { useReports } from '@/context/ReportContext'
 import { executeQuery, fetchMeta } from '@/lib/api'
+import { fieldType } from '@/lib/meta'
 import { addWidget, updateWidget } from '@/lib/storage'
 import type { Cube, CubeMeta, WidgetInstance, WidgetType } from '@/lib/types'
 import { WIDGET_SCHEMAS } from '@/lib/widget-schemas'
@@ -144,7 +144,8 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
       setPreviewData(result.data ?? [])
     } catch (e) {
       setPreviewData([])
-      setPreviewError(e instanceof Error ? e.message : 'Query failed')
+      console.log(`runPreview`, e)
+      setPreviewError(`Unable to preview: Unsupported Query`)
     } finally {
       setPreviewLoading(false)
     }
@@ -167,7 +168,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
         case 'bar':
         case 'line':
         case 'area':
-          return { title: 'Widget Title', xField: firstDim, yFields: measures.length ? measures : [''] }
+          return { title: 'Widget Title', xField: firstDim, yFields: measures }
         case 'pie':
           return { title: 'Widget Title', labelField: firstDim, valueField: firstMeasure }
         case 'number':
@@ -176,8 +177,23 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
           return { title: 'Widget Title', valueField: firstMeasure }
         case 'metric':
           return { title: 'Widget Title', fields: measures.length ? measures.map((m: string) => ({ label: m, valueField: m })) : [{ label: '', valueField: '' }] }
-        case 'table':
-          return { title: 'Widget Title' }
+        case 'table': {
+          const allFields = [...measures, ...dimensions, ...timeDims]
+          const numericTimeFields = allFields.filter((f) => {
+            const t = fieldType(f)
+            if (!t) return true
+            return t !== 'string' && t !== 'boolean'
+          })
+          return {
+            title: 'Widget Title',
+            columnFormats: numericTimeFields.map((f) => ({
+              field: f,
+              prefix: '',
+              format: 'none',
+              precision: 0,
+            })),
+          }
+        }
       }
     } catch {
       return {}
@@ -297,27 +313,61 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
     }
   }, [queryText])
 
+  const measureFields = useMemo(() => {
+    try {
+      const q = JSON.parse(queryText)
+      return q.measures || []
+    } catch {
+      return []
+    }
+  }, [queryText])
+
   const singleAxis = new Set(['valueField', 'trendField', 'xField', 'labelField'])
-  const arrayAxis = new Set(['yFields'])
+  const multiAxis = new Set(['yFields'])
+  const formatKeys = new Set(['xFormat', 'yFormat', 'valueFormat'])
 
   const uiSchema = useMemo(() => {
     const schema = WIDGET_SCHEMAS[widgetType]
     if (!schema?.properties) return {}
-    const ui: Record<string, unknown> = {}
+    const ui: Record<string, unknown> = {
+      title: { 'ui:widget': 'titleWidget', 'ui:options': { label: false } },
+    }
     for (const key of Object.keys(schema.properties)) {
       if (singleAxis.has(key)) {
         ui[key] = { 'ui:widget': 'fieldSelect', 'ui:options': { fields: availableFields } }
       }
-      if (arrayAxis.has(key)) {
-        ui[key] = { items: { 'ui:widget': 'fieldSelect', 'ui:options': { fields: availableFields } } }
+      if (multiAxis.has(key)) {
+        ui[key] = { 'ui:widget': 'multiFieldSelect', 'ui:options': { fields: measureFields } }
+      }
+      if (formatKeys.has(key)) {
+        let ft = 'string'
+        const cfg = config as Record<string, unknown>
+        if (key === 'yFormat') ft = 'number'
+        else if (key === 'xFormat') {
+          const xf = cfg.xField as string
+          const raw = fieldType(xf)
+          if (raw === 'time') ft = 'time'
+          else if (raw === 'string' || raw === 'boolean') ft = 'string'
+          else ft = 'number'
+        } else if (key === 'valueFormat') {
+          const vf = cfg.valueField as string
+          const raw = fieldType(vf)
+          if (raw === 'time') ft = 'time'
+          else if (raw === 'string' || raw === 'boolean') ft = 'string'
+          else ft = 'number'
+        }
+        ui[key] = { 'ui:widget': 'formatSelect', 'ui:options': { fieldType: ft } }
       }
     }
+    if (widgetType === 'table') {
+      ui.columnFormats = { 'ui:field': 'flatFormatList' }
+    }
     return ui
-  }, [widgetType, availableFields])
+  }, [widgetType, availableFields, measureFields, config])
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="flex flex-col gap-0" style={{ minWidth: '800px', height: '600px' }}>
+      <DialogContent className="flex flex-col gap-0" style={{ minWidth: '960px', height: '600px' }}>
         <DialogHeader className="shrink-0 mb-4">
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? 'Edit Widget' : step === 'fields' ? 'Add Widget' : 'Configure Widget'}
@@ -336,7 +386,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                 {showQuery && (
                   <InputGroup className="h-auto relative rounded-[min(var(--radius-md),8px)]">
                     <InputGroupTextarea className="min-h-50 max-h-50 font-mono md:text-[10px] pb-7 leading-tight" value={queryText} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setQueryText(e.target.value)} />
-                    <InputGroupButton size="xs" variant="outline" onClick={handlePreview} disabled={previewLoading} className="absolute bottom-1 right-1 z-10">
+                    <InputGroupButton size="xs" variant="outline" onClick={handlePreview} disabled={previewLoading} className="absolute bottom-1 right-1 z-10 font-normal text-xs rounded-sm">
                       {previewLoading ? 'Loading...' : 'Preview'}
                     </InputGroupButton>
                   </InputGroup>
@@ -344,7 +394,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
 
                 <div className="flex-1 min-h-0 pb-3">
                   {previewError && (
-                    <div className="h-full overflow-auto rounded border border-red-300 bg-red-50 text-xs p-2 text-red-700">
+                    <div className="h-full overflow-auto rounded border border-dashed text-xs p-4 text-center text-muted-foreground pt-12">
                       {previewError}
                     </div>
                   )}
@@ -371,7 +421,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                     </div>
                   )}
                   {!previewError && previewData !== null && previewData.length === 0 && (
-                    <div className="h-full overflow-auto rounded border border-dashed text-xs p-4 text-center text-muted-foreground">
+                    <div className="h-full overflow-auto rounded border border-dashed text-xs p-4 text-center text-muted-foreground pt-12">
                       No data. Run a query to see results.
                     </div>
                   )}
@@ -511,22 +561,20 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
 
           {step === 'configure' && (
             <>
-              {!isEditing && (
-                <div className="flex flex-row gap-2">
-                  {WIDGET_TYPES.map((wt) => (
-                    <Button
-                      key={wt.type}
-                      variant={widgetType === wt.type ? 'default' : 'outline'}
-                      size="sm"
-                      className="flex flex-col justify-start h-14 w-[100px] px-2 py-2 gap-0"
-                      onClick={() => { setWidgetType(wt.type); setConfig(prev => ({ ...prev, title: wt.label })) }}
-                    >
-                      <span className="text-xs font-medium">{wt.label}</span>
-                      <span className="text-[9px] text-muted-foreground leading-tight text-wrap">{wt.desc}</span>
-                    </Button>
-                  ))}
-                </div>
-              )}
+              <div className="flex flex-row gap-2">
+                {WIDGET_TYPES.map((wt) => (
+                  <Button
+                    key={wt.type}
+                    variant={widgetType === wt.type ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex flex-col justify-start h-14 w-[100px] px-2 py-2 gap-0"
+                    onClick={() => { setWidgetType(wt.type); setConfig(deriveConfig(wt.type)) }}
+                  >
+                    <span className="text-xs font-medium">{wt.label}</span>
+                    <span className="text-[9px] text-muted-foreground leading-tight text-wrap">{wt.desc}</span>
+                  </Button>
+                ))}
+              </div>
               <div className="grid grid-cols-[7fr_3fr] grid-rows-1 gap-4 flex-1 min-h-0">
                 <div className="flex flex-col gap-3 min-w-0 min-h-0">
                   {previewData && previewData.length > 0 ? (
@@ -537,7 +585,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                       {widgetType === 'line' && <LineWidget data={previewData} config={config as never} />}
                       {widgetType === 'area' && <AreaWidget data={previewData} config={config as never} />}
                       {widgetType === 'pie' && <PieWidget data={previewData} config={config as never} />}
-                      {widgetType === 'table' && <TableWidget data={previewData} />}
+                      {widgetType === 'table' && <TableWidget data={previewData} config={config as never} />}
                       {widgetType === 'metric' && <MetricWidget data={previewData} config={config as never} />}
                     </div>
                   ) : (
@@ -548,16 +596,18 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                 </div>
                 <div className="flex flex-col gap-3 min-w-0 min-h-0 overflow-y-auto">
                   {widgetType && (
-                    <div>
-                      <Label className="text-xs mb-1 block">Widget Config</Label>
+                    <div className=''>
                       <Form
                         schema={WIDGET_SCHEMAS[widgetType]}
                         formData={config}
                         validator={validator}
                         uiSchema={uiSchema}
-                        widgets={{ fieldSelect: FieldSelect }}
-                        templates={{ ArrayFieldItemTemplate: CompactArrayItemTemplate, ButtonTemplates: { AddButton: CompactAddButton } }}
+                        formContext={config}
+                        fields={{ flatFormatList: FlatFormatList as never }}
+                        widgets={{ fieldSelect: FieldSelect, multiFieldSelect: MultiFieldSelect, formatSelect: FormatSelect, prefixSelect: PrefixSelect, titleWidget: TitleWidget }}
+                        templates={{ ArrayFieldTemplate: CompactArrayFieldTemplate, ArrayFieldItemTemplate: CompactArrayItemTemplate, ArrayFieldTitleTemplate: CompactArrayFieldTitleTemplate, ObjectFieldTemplate: CompactObjectFieldTemplate as never, BaseInputTemplate: XsBaseInputTemplate, ButtonTemplates: { AddButton: CompactAddButton } }}
                         onChange={(e) => setConfig(e.formData)}
+                        className="widget-config-xs"
                       >
                         <></>
                       </Form>

@@ -1,11 +1,12 @@
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
+import { formatValue } from './widget-theme'
 
 interface GaugeConfig {
   valueField: string
   min?: number
   max?: number
   thresholds?: { from: number; to: number; color: string }[]
-  format?: string
+  valueFormat?: string
 }
 
 interface GaugeWidgetProps {
@@ -29,7 +30,7 @@ export function GaugeWidget({ data, config }: GaugeWidgetProps) {
     if (match) fill = match.color
   }
 
-  const formatted = config.format === 'percent' ? `${Math.round(pct)}%` : String(value)
+  const formatted = config.valueFormat === 'percent' ? `${Math.round(pct)}%` : formatValue(value, config.valueFormat, 'number')
 
   const data01 = [
     { name: 'value', value: pct },

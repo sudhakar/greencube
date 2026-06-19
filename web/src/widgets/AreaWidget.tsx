@@ -1,12 +1,13 @@
 import {
   Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { fieldTitle } from '@/lib/meta'
-import { axisTickStyle, chartColors, tooltipCursor, tooltipStyle } from './widget-theme'
+import { axisTickStyle, chartColors, detectFieldType, formatValue, legendFormatter, tooltipCursor, tooltipStyle } from './widget-theme'
 
 interface AreaConfig {
   xField: string
   yFields: string[]
+  xFormat?: string
+  yFormat?: string
   stacked?: boolean
   horizontal?: boolean
   sortBy?: string
@@ -33,10 +34,10 @@ export function AreaWidget({ data, config }: AreaWidgetProps) {
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
         {config.showGrid !== false && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
-        <XAxis dataKey={xField} tick={axisTickStyle} stroke="var(--border)" />
-        <YAxis tick={axisTickStyle} stroke="var(--border)" />
+        <XAxis dataKey={xField} tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.xFormat, detectFieldType(xField))} />
+        <YAxis tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.yFormat, 'number')} />
         <Tooltip contentStyle={tooltipStyle} cursor={tooltipCursor} />
-        {config.showLegend !== false && <Legend formatter={(value: string) => <span style={{ color: 'var(--foreground)' }}>{fieldTitle(value)}</span>} />}
+        {config.showLegend !== false && <Legend formatter={legendFormatter} />}
         {yFields.map((yf, i) => (
           <Area key={yf} type="monotone" dataKey={yf} fill={chartColors[i % chartColors.length]} stroke={chartColors[i % chartColors.length]} stackId={config.stacked ? 'stack' : undefined} />
         ))}
