@@ -359,7 +359,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="flex flex-col gap-0" style={{ minWidth: '960px', height: '600px' }}>
+      <DialogContent className="flex flex-col gap-0" style={{ minWidth: '1150px', height: '600px' }}>
         <DialogHeader className="shrink-0 mb-4">
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? 'Edit Widget' : step === 'fields' ? 'Add Widget' : 'Configure Widget'}
@@ -552,64 +552,69 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
           )}
 
           {step === 'configure' && (
-            <>
-              <div className="flex flex-row gap-2">
-                {WIDGET_TYPES.map((wt) => (
-                  <Button
-                    key={wt.type}
-                    variant={widgetType === wt.type ? 'default' : 'outline'}
-                    size="sm"
-                    className="flex flex-col justify-start h-14 w-[100px] px-2 py-2 gap-0"
-                    onClick={() => { setWidgetType(wt.type); setConfig(deriveConfig(wt.type)) }}
-                  >
-                    <span className="text-xs font-medium">{wt.label}</span>
-                    <span className="text-[9px] text-muted-foreground leading-tight text-wrap">{wt.desc}</span>
-                  </Button>
-                ))}
-              </div>
-              <div className="grid grid-cols-[7fr_3fr] grid-rows-1 gap-4 flex-1 min-h-0">
-                <div className="flex flex-col gap-3 min-w-0 min-h-0">
-                  {previewData && previewData.length > 0 ? (
-                    <div className="flex-1 overflow-auto rounded border min-h-0 p-1">
-                      {widgetType === 'number' && <NumberWidget data={previewData} config={config as never} />}
-                      {widgetType === 'bar' && <BarWidget data={previewData} config={config as never} />}
-                      {widgetType === 'line' && <LineWidget data={previewData} config={config as never} />}
-                      {widgetType === 'area' && <AreaWidget data={previewData} config={config as never} />}
-                      {widgetType === 'pie' && <PieWidget data={previewData} config={config as never} />}
-                      {widgetType === 'table' && <TableWidget data={previewData} config={config as never} />}
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground min-h-0">
-                      No data. Go back and configure your query.
-                    </div>
-                  )}
+            <div className="grid grid-cols-[7fr_3fr] grid-rows-1 gap-4 flex-1 min-h-0">
+              <div className="flex flex-row gap-3 min-w-0 min-h-0 overflow-y-auto">
+                <div className="flex flex-col gap-2 shrink-0">
+                  {WIDGET_TYPES.map((wt) => (
+                    <Button
+                      key={wt.type}
+                      variant={widgetType === wt.type ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex flex-col justify-start h-14 w-[100px] px-2 py-2 gap-0"
+                      onClick={() => { setWidgetType(wt.type); setConfig(deriveConfig(wt.type)) }}
+                    >
+                      <span className="text-xs font-medium">{wt.label}</span>
+                      <span className="text-[9px] text-muted-foreground leading-tight text-wrap">{wt.desc}</span>
+                    </Button>
+                  ))}
                 </div>
-                <div className="flex flex-col gap-3 min-w-0 min-h-0 overflow-y-auto">
-                  {widgetType && (
-                    <div className=''>
-                      <Form
-                        schema={WIDGET_SCHEMAS[widgetType]}
-                        formData={config}
-                        validator={validator}
-                        uiSchema={uiSchema}
-                        formContext={config}
-                        fields={{ flatFormatList: FlatFormatList as never }}
-                        widgets={{ fieldSelect: FieldSelect, multiFieldSelect: MultiFieldSelect, formatSelect: FormatSelect, prefixSelect: PrefixSelect, titleWidget: TitleWidget }}
-                        templates={{ ArrayFieldTemplate: CompactArrayFieldTemplate, ArrayFieldItemTemplate: CompactArrayItemTemplate, ArrayFieldTitleTemplate: CompactArrayFieldTitleTemplate, ObjectFieldTemplate: CompactObjectFieldTemplate as never, BaseInputTemplate: XsBaseInputTemplate, ButtonTemplates: { AddButton: CompactAddButton } }}
-                        onChange={(e) => setConfig(e.formData)}
-                        className="widget-config-xs"
-                      >
-                        <></>
-                      </Form>
+                {previewData && previewData.length > 0 ? (
+                  <div className="flex-1 overflow-auto rounded border min-h-0 p-2">
+                    <div className="flex h-full flex-col overflow-hidden rounded-sm bg-card">
+                      <div className="px-3 pt-1.5 pb-1.5">
+                        <span className="truncate text-sm font-medium">{((config.title as string) ?? '').trim() || 'Widget Title'}</span>
+                      </div>
+                      <div className="flex-1 overflow-auto p-0">
+                        {widgetType === 'number' && <NumberWidget data={previewData} config={config as never} />}
+                        {widgetType === 'bar' && <BarWidget data={previewData} config={config as never} />}
+                        {widgetType === 'line' && <LineWidget data={previewData} config={config as never} />}
+                        {widgetType === 'area' && <AreaWidget data={previewData} config={config as never} />}
+                        {widgetType === 'pie' && <PieWidget data={previewData} config={config as never} />}
+                        {widgetType === 'table' && <TableWidget data={previewData} config={config as never} />}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground min-h-0">
+                    No data. Go back and configure your query.
+                  </div>
+                )}
               </div>
-            </>
+              <div className="flex flex-col gap-3 min-w-0 min-h-0 overflow-y-auto">
+                {widgetType && (
+                  <div className=''>
+                    <Form
+                      schema={WIDGET_SCHEMAS[widgetType]}
+                      formData={config}
+                      validator={validator}
+                      uiSchema={uiSchema}
+                      formContext={config}
+                      fields={{ flatFormatList: FlatFormatList as never }}
+                      widgets={{ fieldSelect: FieldSelect, multiFieldSelect: MultiFieldSelect, formatSelect: FormatSelect, prefixSelect: PrefixSelect, titleWidget: TitleWidget }}
+                      templates={{ ArrayFieldTemplate: CompactArrayFieldTemplate, ArrayFieldItemTemplate: CompactArrayItemTemplate, ArrayFieldTitleTemplate: CompactArrayFieldTitleTemplate, ObjectFieldTemplate: CompactObjectFieldTemplate as never, BaseInputTemplate: XsBaseInputTemplate, ButtonTemplates: { AddButton: CompactAddButton } }}
+                      onChange={(e) => setConfig(e.formData)}
+                      className="widget-config-xs"
+                    >
+                      <></>
+                    </Form>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t shrink-0">
+        <div className="flex justify-end gap-2 pt-2 border-t shrink-0 mt-4">
           {step === 'fields' ? (
             <>
               <Button variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
