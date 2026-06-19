@@ -29,9 +29,7 @@ import type { Cube, CubeMeta, WidgetInstance, WidgetType } from '@/lib/types'
 import { WIDGET_SCHEMAS } from '@/lib/widget-schemas'
 import { AreaWidget } from '@/widgets/AreaWidget'
 import { BarWidget } from '@/widgets/BarWidget'
-import { GaugeWidget } from '@/widgets/GaugeWidget'
 import { LineWidget } from '@/widgets/LineWidget'
-import { MetricWidget } from '@/widgets/MetricWidget'
 import { NumberWidget } from '@/widgets/NumberWidget'
 import { PieWidget } from '@/widgets/PieWidget'
 import { TableWidget } from '@/widgets/TableWidget'
@@ -50,13 +48,11 @@ function getCatIcon(field: { name: string }, cube: Cube): LucideIcon {
 
 const WIDGET_TYPES: { type: WidgetType; label: string; desc: string }[] = [
   { type: 'number', label: 'Number', desc: 'Single value with optional trend' },
-  { type: 'gauge', label: 'Gauge', desc: 'Value within a range' },
   { type: 'bar', label: 'Bar Chart', desc: 'Categorical comparison' },
   { type: 'line', label: 'Line Chart', desc: 'Trend over time' },
   { type: 'area', label: 'Area Chart', desc: 'Filled trend' },
   { type: 'pie', label: 'Pie Chart', desc: 'Proportions' },
   { type: 'table', label: 'Table', desc: 'Tabular data' },
-  { type: 'metric', label: 'Metric', desc: 'Multiple key values' },
 ]
 
 const DEFAULT_QUERY = JSON.stringify({ dimensions: [], timeDimensions: [], measures: [] }, null, 2)
@@ -173,10 +169,6 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
           return { title: 'Widget Title', labelField: firstDim, valueField: firstMeasure }
         case 'number':
           return { title: 'Widget Title', valueField: firstMeasure }
-        case 'gauge':
-          return { title: 'Widget Title', valueField: firstMeasure }
-        case 'metric':
-          return { title: 'Widget Title', fields: measures.length ? measures.map((m: string) => ({ label: m, valueField: m })) : [{ label: '', valueField: '' }] }
         case 'table': {
           const allFields = [...measures, ...dimensions, ...timeDims]
           const numericTimeFields = allFields.filter((f) => {
@@ -580,13 +572,11 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                   {previewData && previewData.length > 0 ? (
                     <div className="flex-1 overflow-auto rounded border min-h-0 p-1">
                       {widgetType === 'number' && <NumberWidget data={previewData} config={config as never} />}
-                      {widgetType === 'gauge' && <GaugeWidget data={previewData} config={config as never} />}
                       {widgetType === 'bar' && <BarWidget data={previewData} config={config as never} />}
                       {widgetType === 'line' && <LineWidget data={previewData} config={config as never} />}
                       {widgetType === 'area' && <AreaWidget data={previewData} config={config as never} />}
                       {widgetType === 'pie' && <PieWidget data={previewData} config={config as never} />}
                       {widgetType === 'table' && <TableWidget data={previewData} config={config as never} />}
-                      {widgetType === 'metric' && <MetricWidget data={previewData} config={config as never} />}
                     </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground min-h-0">

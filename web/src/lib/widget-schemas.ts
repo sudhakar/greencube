@@ -15,17 +15,6 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
       decimals: { type: 'integer', title: 'Decimals', default: 0 },
     },
   },
-  gauge: {
-    type: 'object',
-    required: ['valueField'],
-    properties: {
-      title: { type: 'string', title: 'Title', default: 'Widget Title' },
-      valueField: { type: 'string', title: 'Value Field' },
-      valueFormat: { type: 'string', title: 'Value Format', default: 'auto' },
-      min: { type: 'number', title: 'Min', default: 0 },
-      max: { type: 'number', title: 'Max', default: 100 },
-    },
-  },
   bar: {
     type: 'object',
     required: ['xField', 'yFields'],
@@ -73,27 +62,6 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
       valueField: { type: 'string', title: 'Value Field' },
       valueFormat: { type: 'string', title: 'Value Format', default: 'auto' },
       donut: { type: 'boolean', title: 'Donut', default: false },
-    },
-  },
-  metric: {
-    type: 'object',
-    properties: {
-      title: { type: 'string', title: 'Title', default: 'Widget Title' },
-      fields: {
-        type: 'array',
-        title: 'Metrics',
-        items: {
-          type: 'object',
-          properties: {
-            label: { type: 'string', title: 'Label' },
-            valueField: { type: 'string', title: 'Value Field' },
-            valueFormat: { type: 'string', title: 'Format', default: 'auto' },
-            prefix: { type: 'string', title: 'Prefix' },
-            suffix: { type: 'string', title: 'Suffix' },
-          },
-          required: ['label', 'valueField'],
-        },
-      },
     },
   },
   table: {

@@ -1,4 +1,4 @@
-export type WidgetType = 'number' | 'gauge' | 'bar' | 'line' | 'area' | 'pie' | 'table' | 'metric'
+export type WidgetType = 'number' | 'bar' | 'line' | 'area' | 'pie' | 'table'
 
 export interface LayoutItem {
   i: string

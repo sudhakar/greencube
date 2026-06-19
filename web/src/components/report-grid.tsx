@@ -5,9 +5,7 @@ import { useWidgetData } from '@/hooks/useWidgetData'
 import type { LayoutItem, WidgetInstance } from '@/lib/types'
 import { AreaWidget } from '@/widgets/AreaWidget'
 import { BarWidget } from '@/widgets/BarWidget'
-import { GaugeWidget } from '@/widgets/GaugeWidget'
 import { LineWidget } from '@/widgets/LineWidget'
-import { MetricWidget } from '@/widgets/MetricWidget'
 import { NumberWidget } from '@/widgets/NumberWidget'
 import { PieWidget } from '@/widgets/PieWidget'
 import { TableWidget } from '@/widgets/TableWidget'
@@ -37,13 +35,11 @@ function WidgetRenderer({ widget, onEdit, onClone, onDelete }: WidgetRendererPro
       onDelete={onDelete}
     >
       {widget.type === 'number' && <NumberWidget data={data} config={widget.config as never} />}
-      {widget.type === 'gauge' && <GaugeWidget data={data} config={widget.config as never} />}
       {widget.type === 'bar' && <BarWidget data={data} config={widget.config as never} />}
       {widget.type === 'line' && <LineWidget data={data} config={widget.config as never} />}
       {widget.type === 'area' && <AreaWidget data={data} config={widget.config as never} />}
       {widget.type === 'pie' && <PieWidget data={data} config={widget.config as never} />}
       {widget.type === 'table' && <TableWidget data={data} />}
-      {widget.type === 'metric' && <MetricWidget data={data} config={widget.config as never} />}
     </WidgetFrame>
   )
 }
