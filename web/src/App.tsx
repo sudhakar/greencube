@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { AddWidgetDialog } from '@/components/add-widget-dialog'
+import { ReportGrid } from '@/components/report-grid'
+import { ReportList } from '@/components/report-list'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { Separator } from '@/components/ui/separator'
 import { ReportProvider, useReports } from '@/context/ReportContext'
-import { ReportList } from '@/components/report-list'
-import { ReportGrid } from '@/components/report-grid'
-import { AddWidgetDialog } from '@/components/add-widget-dialog'
-import { ThemeToggle } from '@/components/theme-toggle'
 import type { WidgetInstance } from '@/lib/types'
+import { AppShell2 } from './components/rjsf'
 
 function AppShell() {
   const { setActiveId } = useReports()
@@ -56,7 +57,7 @@ function AppShell() {
 export default function App() {
   return (
     <ReportProvider>
-      <AppShell />
+      <AppShell2 />
     </ReportProvider>
   )
 }
