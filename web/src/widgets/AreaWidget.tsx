@@ -1,7 +1,7 @@
 import {
   Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { axisTickStyle, chartColors, detectFieldType, formatValue, legendFormatter, tooltipCursor, tooltipStyle } from './widget-theme'
+import { axisTickStyle, chartColors, detectFieldType, formatValue, legendFormatter, tooltipProps } from './widget-theme'
 
 interface AreaConfig {
   xField: string
@@ -36,7 +36,7 @@ export function AreaWidget({ data, config }: AreaWidgetProps) {
         {config.showGrid !== false && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
         <XAxis dataKey={xField} tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.xFormat, detectFieldType(xField))} />
         <YAxis tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.yFormat, 'number')} />
-        <Tooltip contentStyle={tooltipStyle} cursor={tooltipCursor} />
+        <Tooltip {...tooltipProps} />
         {config.showLegend !== false && <Legend formatter={legendFormatter} />}
         {yFields.map((yf, i) => (
           <Area key={yf} type="monotone" dataKey={yf} fill={chartColors[i % chartColors.length]} stroke={chartColors[i % chartColors.length]} stackId={config.stacked ? 'stack' : undefined} />

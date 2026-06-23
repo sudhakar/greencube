@@ -1,4 +1,4 @@
-import { createElement } from 'react'
+import { type CSSProperties, createElement } from 'react'
 import { fieldTitle, fieldType } from '@/lib/meta'
 
 export const chartColors = [
@@ -6,20 +6,22 @@ export const chartColors = [
   'var(--chart-4)', 'var(--chart-5)',
 ] as const
 
-export const tooltipStyle: React.CSSProperties = {
-  background: 'var(--background)',
-  border: '0 none',
-  borderRadius: 4,
-  color: 'var(--foreground)',
-  fontSize: 10,
-  paddingLeft: 12,
-  paddingTop: 4,
-  paddingRight: 8,
-  paddingBottom: 0,
-
+export const tooltipProps: Record<string, CSSProperties> = {
+  contentStyle: {
+    background: 'var(--background)',
+    border: '0 none',
+    borderRadius: 4,
+    color: 'var(--foreground)',
+    fontSize: 10,
+    paddingLeft: 12,
+    paddingTop: 4,
+    paddingRight: 8,
+    paddingBottom: 4,
+  },
+  cursor: { fill: 'var(--muted)', stroke: 'var(--border)' },
+  itemStyle: { paddingTop: 0, paddingBottom: 0 },
+  labelStyle: { fontSize: 10, paddingBottom: 2 }
 }
-
-export const tooltipCursor = { fill: 'var(--muted)', stroke: 'var(--border)' }
 
 export const legendFormatter = (value: string) =>
   createElement('span', { style: { color: 'var(--foreground)', fontSize: 10 } }, fieldTitle(value))

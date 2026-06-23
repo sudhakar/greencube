@@ -1,5 +1,5 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
-import { chartColors, formatValue, legendFormatter, tooltipCursor, tooltipStyle } from './widget-theme'
+import { chartColors, formatValue, legendFormatter, tooltipProps } from './widget-theme'
 
 interface PieConfig {
   labelField: string
@@ -40,7 +40,7 @@ export function PieWidget({ data, config }: PieWidgetProps) {
           ))}
         </Pie>
         {config.showLegend && <Legend formatter={legendFormatter} />}
-        <Tooltip labelStyle={{ fontSize: 10, padding: 0 }} contentStyle={tooltipStyle} cursor={tooltipCursor} formatter={(value) => formatValue(value, config.valueFormat, 'number')} />
+        <Tooltip {...tooltipProps} formatter={(value) => formatValue(value, config.valueFormat, 'number')} />
       </PieChart>
     </ResponsiveContainer>
   )

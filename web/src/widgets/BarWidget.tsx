@@ -1,7 +1,7 @@
 import {
   Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { axisTickStyle, chartColors, detectFieldType, formatValue, legendFormatter, tooltipCursor, tooltipStyle } from './widget-theme'
+import { axisTickStyle, chartColors, detectFieldType, formatValue, legendFormatter, tooltipProps } from './widget-theme'
 
 interface BarConfig {
   xField: string
@@ -32,12 +32,17 @@ export function BarWidget({ data, config }: BarWidgetProps) {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+      <BarChart data={chartData} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
         {config.showGrid !== false && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
         <XAxis dataKey={xField} tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.xFormat, detectFieldType(xField))} />
         <YAxis tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.yFormat, 'number')} />
-        <Tooltip contentStyle={tooltipStyle} cursor={tooltipCursor} />
-        {config.showLegend !== false && <Legend formatter={legendFormatter} />}
+        <Tooltip {...tooltipProps} />
+        {config.showLegend !== false && <Legend formatter={legendFormatter} layout='vertical' align='center' verticalAlign='middle' wrapperStyle={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          zIndex: 10
+        }} />}
         {yFields.map((yf, i) => (
           <Bar key={yf} dataKey={yf} fill={chartColors[i % chartColors.length]} stackId={config.stacked ? 'stack' : undefined} />
         ))}

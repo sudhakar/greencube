@@ -57,7 +57,7 @@ function AppShell() {
 export default function App() {
   return (
     <ReportProvider>
-      <AppShell2 />
+      <AppShell />
     </ReportProvider>
   )
 }

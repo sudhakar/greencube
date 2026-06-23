@@ -1,9 +1,11 @@
-import { Plus, X } from 'lucide-react'
-import type { ComponentProps, ComponentType, MouseEventHandler, ReactNode, ReactElement } from 'react'
+import { AlignCenter, AlignLeft, AlignRight, Plus, TextAlignCenterIcon, X } from 'lucide-react'
+import type { ComponentProps, ComponentType, MouseEventHandler, ReactElement, ReactNode } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { fieldType } from '@/lib/meta'
+import { Button } from './ui/button'
+import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group'
 
 export const FieldSelect: ComponentType<any> = ({ value, onChange, options }) => {
   const fields = options?.fields ?? []
@@ -160,10 +162,23 @@ export function XsBaseInputTemplate(props: ComponentProps<any>) {
 export function TitleWidget({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
   return (
     <InputGroup>
-      <InputGroupAddon className="pl-1.5 text-muted-foreground text-[10px]">
+      <InputGroupAddon className="pl-1.5 text-muted-foreground text-xs">
         Title
       </InputGroupAddon>
       <InputGroupInput value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+      <InputGroupAddon align="inline-end" className="p-0 text-muted-foreground text-xs">
+        <ToggleGroup variant="outline" size="sm" spacing={0}>
+          <ToggleGroupItem value="bold" aria-label="Toggle bold">
+            <AlignLeft />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="italic" aria-label="Toggle italic">
+            <AlignCenter />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="strikethrough" aria-label="Toggle strikethrough">
+            <AlignRight />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </InputGroupAddon>
     </InputGroup>
   )
 }

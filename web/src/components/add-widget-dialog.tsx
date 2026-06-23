@@ -569,12 +569,14 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                   ))}
                 </div>
                 {previewData && previewData.length > 0 ? (
-                  <div className="flex-1 overflow-auto rounded border min-h-0 p-2">
+                  <div className="flex-1 overflow-auto rounded border min-h-0 p-8"
+                    style={{ background: "linear-gradient(90deg, #18181b 1px, transparent 1px) 0 0 / 5px 5px,   linear-gradient(#18181b 1px, transparent 1px) 0 0 / 5px 5px,   hsl(240 6% 4% / 1)" }}
+                  >
                     <div className="flex h-full flex-col overflow-hidden rounded-sm bg-card">
                       <div className="px-3 pt-1.5 pb-1.5">
                         <span className="truncate text-sm font-medium">{((config.title as string) ?? '').trim() || 'Widget Title'}</span>
                       </div>
-                      <div className="flex-1 overflow-auto p-0">
+                      <div className="flex-1 overflow-auto p-0 relative">
                         {widgetType === 'number' && <NumberWidget data={previewData} config={config as never} />}
                         {widgetType === 'bar' && <BarWidget data={previewData} config={config as never} />}
                         {widgetType === 'line' && <LineWidget data={previewData} config={config as never} />}
