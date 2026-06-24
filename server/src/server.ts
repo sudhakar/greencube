@@ -59,8 +59,8 @@ app.use('/cube/*', async (c, next) => {
   if (auth?.startsWith('Bearer ')) {
     try {
       const { payload } = decode(auth.slice(7))
-      ;(c as any).var.user = payload
-    } catch {
+      ;(c as any).set('user', payload)
+    } catch (e) {
       // Malformed token — treat as anonymous
     }
   }

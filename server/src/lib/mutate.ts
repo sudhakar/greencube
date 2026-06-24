@@ -98,7 +98,8 @@ export class MutationExecutor {
 
     if (mutation.filters) {
       for (const f of mutation.filters) {
-        if (!cube.dimensions[f.member]) {
+        const field = f.member.replace(/^[A-Z]\w*\./, '')
+        if (!cube.dimensions[field]) {
           raise(400, `Filter field "${f.member}" not found on cube "${cube.name}"`)
         }
       }
@@ -119,7 +120,7 @@ export class MutationExecutor {
     const entries = Object.entries(mutation.values ?? {})
     const cols = entries.map(([key]) => fieldToColumn(typeof cube.dimensions[key]!.sql === 'function' ? key : cube.dimensions[key]!.sql as string))
     const placeholders = entries.map(() => '?')
-    const params = entries.map(([, v]) => v)
+    const params = entries.map(([, v]) => typeof v === 'boolean' ? (v ? 1 : 0) : v)
     const returning = mutation.returning?.join(', ') ?? '*'
     return {
       sql: `INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING ${returning}`,
@@ -133,7 +134,7 @@ export class MutationExecutor {
       const col = fieldToColumn(typeof cube.dimensions[key]!.sql === 'function' ? key : cube.dimensions[key]!.sql as string)
       return `${col} = ?`
     })
-    const params: unknown[] = entries.map(([, v]) => v)
+    const params: unknown[] = entries.map(([, v]) => typeof v === 'boolean' ? (v ? 1 : 0) : v)
 
     let whereClause = ''
     if (mutation.filters && mutation.filters.length > 0) {
@@ -171,7 +172,8 @@ export class MutationExecutor {
     const params: unknown[] = []
 
     for (const f of filters) {
-      const col = fieldToColumn(typeof cube.dimensions[f.member]!.sql === 'function' ? f.member : cube.dimensions[f.member]!.sql as string)
+      const field = f.member.replace(/^[A-Z]\w*\./, '')
+      const col = fieldToColumn(typeof cube.dimensions[field]!.sql === 'function' ? field : cube.dimensions[field]!.sql as string)
 
       switch (f.operator) {
         case 'equals':

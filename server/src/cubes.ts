@@ -649,6 +649,18 @@ export const SAMPLES: { name: string; json: Record<string, unknown> }[] = [
     name: 'Productivity moving average per month',
     json: { measures: ['Productivity.totalLinesOfCode', 'Productivity.movingAvg7Period'], timeDimensions: [{ dimension: 'Productivity.date', granularity: 'month' }] },
   },
+  {
+    name: 'MUTATE: Create an employee',
+    json: { cube: 'Employees', operation: 'create', values: { name: 'Jane Doe', email: 'jane.doe@greencube.io', sex: 'F', band: 'E2', isActive: true } },
+  },
+  {
+    name: 'MUTATE: Update employee 1',
+    json: { cube: 'Employees', operation: 'update', values: { band: 'E3' }, filters: [{ member: 'id', operator: 'equals', values: ['1'] }] },
+  },
+  {
+    name: 'MUTATE: Delete employee 250',
+    json: { cube: 'Employees', operation: 'delete', filters: [{ member: 'id', operator: 'equals', values: ['250'] }] },
+  },
 ]
 
 // =============================================================================

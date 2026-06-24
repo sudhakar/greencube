@@ -34,6 +34,7 @@ export const customers = defineCube('Customers', {
     id: { sql: 'c.id', type: 'number' },
     name: { sql: 'c.name', type: 'string' },
     country: { sql: 'c.country', type: 'string' },
+    isActive: { sql: 'c.active', type: 'boolean' },
     created_at: { sql: 'c.created_at', type: 'time' },
   },
   measures: {

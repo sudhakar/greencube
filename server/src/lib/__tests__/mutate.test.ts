@@ -97,6 +97,26 @@ describe('MutationExecutor', () => {
         { message: /Cannot write computed measure/ },
       )
     })
+
+    it('coerces boolean true to integer 1', async () => {
+      const result = await executor.execute({
+        cube: 'Customers',
+        operation: 'create',
+        values: { name: 'Bool True', country: 'NZ', isActive: true },
+      })
+      assert.equal(result.data.length, 1)
+      assert.equal(result.data[0].active, 1)
+    })
+
+    it('coerces boolean false to integer 0', async () => {
+      const result = await executor.execute({
+        cube: 'Customers',
+        operation: 'create',
+        values: { name: 'Bool False', country: 'AU', isActive: false },
+      })
+      assert.equal(result.data.length, 1)
+      assert.equal(result.data[0].active, 0)
+    })
   })
 
   describe('update', () => {

@@ -5,7 +5,7 @@ export function seed(db: DatabaseSync): void {
 
   db.exec(`CREATE TABLE analytics.customers (
     id INTEGER PRIMARY KEY, name TEXT, country TEXT,
-    created_at TEXT, deleted_at TEXT NULL
+    created_at TEXT, deleted_at TEXT NULL, active INTEGER DEFAULT 1
   )`)
 
   db.exec(`CREATE TABLE analytics.orders (
@@ -46,7 +46,7 @@ export function seed(db: DatabaseSync): void {
     [7, 'Grace', 'DE', '2024-04-01', null],
     [8, 'Hans', 'DE', '2024-07-20', '2025-01-15'],
   ]
-  const insC = db.prepare('INSERT INTO analytics.customers VALUES (?, ?, ?, ?, ?)')
+  const insC = db.prepare('INSERT INTO analytics.customers (id, name, country, created_at, deleted_at) VALUES (?, ?, ?, ?, ?)')
   for (const r of customers) insC.run(...r)
 
   // ── Orders ─────────────────────────────────────────────────────────────────

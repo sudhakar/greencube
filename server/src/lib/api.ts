@@ -76,7 +76,7 @@ export function createCubeApp(
       )
       const result = await executor.execute(mutation, {
         headers: c.req.header() as Record<string, string>,
-        user: (c as any).var?.user,
+        user: (c as any).get('user'),
       })
       return c.json(result)
     } catch (err: any) {

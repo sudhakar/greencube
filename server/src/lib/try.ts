@@ -18,7 +18,8 @@ button.primary { background: #2a7; color: #fff; }
 button.primary:hover { background: #238; }
 button.secondary { background: #e0e0e0; color: #333; }
 button.secondary:hover { background: #ccc; }
-.input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+button.small { font-size: 0.75rem; padding: 4px 10px; }
+.input-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
 .input-row input { flex: 1; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; }
 pre { background: #f0f0f0; color: #444; padding: 8px 12px; border-radius: 6px; font-family: 'SF Mono', Monaco, monospace; font-size: 0.75rem; white-space: pre-wrap; overflow-x: auto; border: 1px solid #ddd; margin: 4px 0 16px; }
 #query-explain-content { padding: 0; }
@@ -40,7 +41,8 @@ table.data tr:nth-child(even) { background: #fafafa; }
 .section-heading { font-size: 0.9rem; font-weight: 600; margin: 12px 0 4px; }
 .section-heading:first-child { margin-top: 0; }
 .label { font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 4px; }
-code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 0.85em; }`
+code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 0.85em; }
+.role-btn-group { display: flex; gap: 4px; }`
 
 const SCRIPT = `function switchTab(name) {
   var tabs = document.querySelectorAll('.tab-btn')
@@ -60,8 +62,15 @@ function setQuery(v) {
   try { ed.value = JSON.stringify(JSON.parse(v), null, 2) } catch (e) { ed.value = v }
 }
 
-function postJSON(url, body) {
-  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json() })
+function setMutation(v) {
+  var ed = document.getElementById('mutation-editor')
+  try { ed.value = JSON.stringify(JSON.parse(v), null, 2) } catch (e) { ed.value = v }
+}
+
+function postJSON(url, body, token) {
+  var headers = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = 'Bearer ' + token
+  return fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) }).then(function (r) { return r.json() })
 }
 
 function renderTable(rows, container) {
@@ -81,20 +90,39 @@ function renderTable(rows, container) {
   container.innerHTML = h
 }
 
+function getToken() {
+  return document.getElementById('auth-token').value.trim() || null
+}
+
+// ── Auth helpers ──
+
+function b64(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/=+$/, '') }
+
+function makeToken(role) {
+  return b64({alg:'none',typ:'JWT'}) + '.' + b64({role:role}) + '.'
+}
+
+function setAuthRole(role) {
+  document.getElementById('auth-token').value = makeToken(role)
+}
+
+// ── Query tab ──
+
 document.getElementById('query-btn').addEventListener('click', function () {
   var ed = document.getElementById('query-editor'), q
   try { q = JSON.parse(ed.value) } catch (e) { document.getElementById('query-results').innerHTML = '<div class="error">Invalid JSON</div>'; return }
   document.getElementById('query-results').innerHTML = '<div class="placeholder">Querying...</div>'
   document.getElementById('query-sql').querySelector('pre').textContent = 'Compiling...'
   document.getElementById('query-explain-content').innerHTML = '<div class="placeholder">Explaining...</div>'
-  postJSON('query', q).then(function (b) {
+  var token = getToken()
+  postJSON('query', q, token).then(function (b) {
     var el = document.getElementById('query-results')
     if (b.error) { el.innerHTML = '<div class="error">' + esc(b.error) + '</div>'; return }
     renderTable(b.data, el)
   }).catch(function (e) {
     document.getElementById('query-results').innerHTML = '<div class="error">' + esc(e.message) + '</div>'
   })
-  postJSON('explain', q).then(function (b) {
+  postJSON('explain', q, token).then(function (b) {
     var el = document.getElementById('query-sql')
     if (b.data && b.data.sql) {
       var sql = b.data.sql.trim()
@@ -117,12 +145,44 @@ document.getElementById('query-editor').addEventListener('keydown', function (e)
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') document.getElementById('query-btn').click()
 })
 
-document.getElementById('sample-select').addEventListener('change', function () {
+document.getElementById('query-sample-select').addEventListener('change', function () {
   var val = this.value;
   if (!val) return;
   setQuery(val);
   switchTab('query');
 });
+
+// ── Mutate tab ──
+
+document.getElementById('mutate-btn').addEventListener('click', function () {
+  var ed = document.getElementById('mutation-editor'), m
+  try { m = JSON.parse(ed.value) } catch (e) { document.getElementById('mutate-results').innerHTML = '<div class="error">Invalid JSON</div>'; return }
+  document.getElementById('mutate-results').innerHTML = '<div class="placeholder">Mutating...</div>'
+  document.getElementById('mutate-sql').querySelector('pre').textContent = 'Sending...'
+  var token = getToken()
+  postJSON('mutate', m, token).then(function (b) {
+    var el = document.getElementById('mutate-results')
+    if (b.error) { el.innerHTML = '<div class="error">' + esc(b.error) + '</div>'; return }
+    renderTable(b.data, el)
+    document.getElementById('mutate-sql').querySelector('pre').textContent = 'Mutation succeeded.'
+  }).catch(function (e) {
+    document.getElementById('mutate-results').innerHTML = '<div class="error">' + esc(e.message) + '</div>'
+    document.getElementById('mutate-sql').querySelector('pre').textContent = e.message
+  })
+})
+
+document.getElementById('mutation-editor').addEventListener('keydown', function (e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') document.getElementById('mutate-btn').click()
+})
+
+document.getElementById('mutate-sample-select').addEventListener('change', function () {
+  var val = this.value;
+  if (!val) return;
+  setMutation(val);
+  switchTab('mutate');
+});
+
+// ── Init ──
 
 window.addEventListener('DOMContentLoaded', function () {
   fetch('meta').then(function (r) { return r.json() }).then(function (data) {
@@ -149,18 +209,37 @@ window.addEventListener('DOMContentLoaded', function () {
     }
     document.getElementById('routes-table-body').innerHTML = rh || '<tr><td colspan="3" class="placeholder">No routes.</td></tr>';
 
-    var sel = document.getElementById('sample-select');
-    if (samples.length > 0) {
-      sel.innerHTML = samples.map(function (s) {
+    // Separate query vs mutation samples
+    var querySamples = samples.filter(function(s) { return !s.json.cube });
+    var mutateSamples = samples.filter(function(s) { return s.json.cube });
+
+    var sel = document.getElementById('query-sample-select');
+    if (querySamples.length > 0) {
+      sel.innerHTML = querySamples.map(function (s) {
         var val = JSON.stringify(s.json).replace(/"/g, '&quot;');
-        return '<option value="' + val + '">' + s.name + '</option>';
+        return '<option value="' + val + '">' + esc(s.name) + '</option>';
       }).join('');
       sel.selectedIndex = 0;
       var evt = new Event('change');
       sel.dispatchEvent(evt);
     } else {
-      sel.innerHTML = '<option value="">No samples available</option>';
+      sel.innerHTML = '<option value="">No query samples</option>';
     }
+
+    var msel = document.getElementById('mutate-sample-select');
+    if (mutateSamples.length > 0) {
+      msel.innerHTML = mutateSamples.map(function (s) {
+        var val = JSON.stringify(s.json).replace(/"/g, '&quot;');
+        return '<option value="' + val + '">' + esc(s.name) + '</option>';
+      }).join('');
+      msel.selectedIndex = 0;
+      var mevt = new Event('change');
+      msel.dispatchEvent(mevt);
+    } else {
+      msel.innerHTML = '<option value="">No mutation samples</option>';
+    }
+
+    // Default query with first cube's first measure
     if (cubes.length > 0) {
       var c = cubes[0];
       var firstMeasure = c.measures[0];
@@ -174,6 +253,7 @@ window.addEventListener('DOMContentLoaded', function () {
   }).catch(function () {});
 });
 `
+
 const PRETTY_SQL = `
 const RE = '(--.*)|(\\'(?:\\'\\'|[^\\'])\\*\\')|(\\\\b(?:sum|avg|count|min|max)(?=\\\\s*\\\\())|(\\\\b(?:select|insert|update|delete|from|where|join|on|and|or|group|by|order|limit|as)\\\\b)|(\\\\b\\\\d+\\\\b)';
 
@@ -218,6 +298,40 @@ const RESPONSE_EXAMPLE = `// /cube/query response
 
 // All endpoints return { "error": "..." } on failure (HTTP 400)`
 
+const MUTATION_REQUEST_EXAMPLE = `{
+  // ── Create ──
+  "cube": "Employees",
+  "operation": "create",              // "create" | "update" | "delete"
+  "values": {                         // required for create/update
+    "name": "Jane Doe",
+    "band": "E2",
+    "email": "jane@greencube.io",
+    "officeId": 1,
+    "departmentId": 1
+  }
+  // ── Update (requires filters) ──
+  // "operation": "update",
+  // "filters": [{ "member": "Employees.id", "operator": "equals", "values": ["1"] }]
+  //
+  // ── Delete (requires filters) ──
+  // "operation": "delete",
+  // "filters": [{ "member": "Employees.id", "operator": "equals", "values": ["250"] }]
+}`
+
+const AUTHORIZATION_DOCS = `// GreenCube uses JWT-based authorization for mutations.
+//
+// Roles:
+//   admin   — all cubes, all operations (create/update/delete)
+//   editor  — Employees and Productivity, create/update only
+//   viewer  — no mutation access
+//
+// Include the token as a Bearer header:
+//   Authorization: Bearer <token>
+//
+// The playground automatically attaches the auth token
+// (above) to all requests. Tokens are NOT verified —
+// any well-formed JWT is accepted (internal tool).`
+
 export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
   const app = new Hono()
 
@@ -229,22 +343,36 @@ export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>GreenCube Query Playground</title>
+        <title>GreenCube Playground</title>
         <style>${CSS}</style>
       </head>
       <body>
         <div class="container">
-          <h1><span>GreenCube</span> Query Playground</h1>
+          <h1><span>GreenCube</span> Playground</h1>
 
           <div class="tab-bar">
             <button type="button" class="tab-btn active" data-tab="query" onclick="switchTab('query')">Query</button>
+            <button type="button" class="tab-btn" data-tab="mutate" onclick="switchTab('mutate')">Mutate</button>
             <button type="button" class="tab-btn" data-tab="docs" onclick="switchTab('docs')">Docs</button>
           </div>
+
+          <details style="margin-bottom:8px">
+            <summary style="font-size:0.85rem;font-weight:400;color:#888">Authorization</summary>
+            <div class="input-row" style="margin-top:6px">
+              <input id="auth-token" type="text" placeholder="Paste JWT token, or click a role to generate one..." style="flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:0.82rem">
+              <span class="role-btn-group">
+                <button class="secondary small" onclick="setAuthRole('admin')">admin</button>
+                <button class="secondary small" onclick="setAuthRole('editor')">editor</button>
+                <button class="secondary small" onclick="setAuthRole('viewer')">viewer</button>
+              </span>
+            </div>
+            <p style="font-size:0.72rem;color:#999;margin:0">Select a role to auto-generate an unsigned JWT. Without a token, mutations are denied.</p>
+          </details>
 
           <div id="tab-query" class="tab-content active">
             <div style="display:flex;align-items:center;gap:20px;margin-bottom:6px">
               <label class="label" style="margin-bottom:0;white-space:nowrap">Samples</label>
-              <select id="sample-select" style="width:min-content;font-size:0.82rem;padding:4px 6px;border:1px solid #ccc;border-radius:4px"><option value="">Loading...</option></select>
+              <select id="query-sample-select" style="width:min-content;font-size:0.82rem;padding:4px 6px;border:1px solid #ccc;border-radius:4px"><option value="">Loading...</option></select>
             </div>
             <label class="label" for="query-editor">Query JSON</label>
             <textarea id="query-editor" rows="7">{\n  "measures": []\n}</textarea>
@@ -261,6 +389,22 @@ export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
             </details>
           </div>
 
+          <div id="tab-mutate" class="tab-content">
+            <div style="display:flex;align-items:center;gap:20px;margin-bottom:6px">
+              <label class="label" style="margin-bottom:0;white-space:nowrap">Samples</label>
+              <select id="mutate-sample-select" style="width:max-content;font-size:0.82rem;padding:4px 6px;border:1px solid #ccc;border-radius:4px"><option value="">Loading...</option></select>
+            </div>
+            <label class="label" for="mutation-editor">Mutation JSON</label>
+            <textarea id="mutation-editor" rows="10">{\n  "cube": "Employees",\n  "operation": "create",\n  "values": {}\n}</textarea>
+            <div class="button-row">
+              <button class="primary" id="mutate-btn">&#9654; Run Mutation</button>
+            </div>
+            <h3 class="section-heading">Results</h3>
+            <div id="mutate-results" class="placeholder">Run a mutation to see results.</div>
+            <h3 class="section-heading">Status</h3>
+            <div id="mutate-sql"><pre class="highlight">&mdash;</pre></div>
+          </div>
+
           <div id="tab-docs" class="tab-content">
             <h3 class="section-heading">Cubes (<span id="cubes-count">...</span>)</h3>
             <table class="meta">
@@ -274,12 +418,27 @@ export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
               <tbody id="routes-table-body"><tr><td colspan="3" class="placeholder">Loading...</td></tr></tbody>
             </table>
 
-            <h3 class="section-heading">POST Request Format</h3>
-            <p style="font-size:0.82rem;color:#555;margin-bottom:6px">All POST endpoints accept a JSON body. For <code>/cube/query</code> and <code>/cube/explain</code>, the request body is a Query object:</p>
+            <h3 class="section-heading">POST /cube/query — Request</h3>
             <pre>${REQUEST_EXAMPLE}</pre>
 
-            <h3 class="section-heading">Response Format</h3>
+            <h3 class="section-heading">POST /cube/query — Response</h3>
             <pre>${RESPONSE_EXAMPLE}</pre>
+
+            <h3 class="section-heading">POST /cube/mutate — Request</h3>
+            <pre>${MUTATION_REQUEST_EXAMPLE}</pre>
+
+            <h3 class="section-heading">POST /cube/mutate — Response</h3>
+            <pre>// Success
+{ "data": [{ "id": 251, "name": "Jane Doe", ... }] }
+
+// Validation error (HTTP 400)
+{ "error": "create requires at least one value" }
+
+// Authorization error (HTTP 403)
+{ "error": "Not authorized" }</pre>
+
+            <h3 class="section-heading">Authorization</h3>
+            <pre>${AUTHORIZATION_DOCS}</pre>
           </div>
         </div>
 
