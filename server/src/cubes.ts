@@ -34,7 +34,7 @@ import { type Cube, defineCube } from './lib/GreenCube.ts'
 // Employees
 // =============================================================================
 
-export const employeesCube: Cube = defineCube('Employees', {
+export const employeesCube = defineCube('Employees', {
   sql: 'analytics.employees e',
   sampleQueries: [
     'employee count by band and country, top 5 bands',
@@ -134,7 +134,7 @@ export const employeesCube: Cube = defineCube('Employees', {
 // Departments
 // =============================================================================
 
-export const departmentsCube: Cube = defineCube('Departments', {
+export const departmentsCube = defineCube('Departments', {
   sql: 'analytics.departments d',
   sampleQueries: [
     'total departments, average budget and median budget',
@@ -179,7 +179,7 @@ export const departmentsCube: Cube = defineCube('Departments', {
 // Offices
 // =============================================================================
 
-export const officesCube: Cube = defineCube('Offices', {
+export const officesCube = defineCube('Offices', {
   sql: 'analytics.offices o',
   sampleQueries: [
     'office count by country and region, top 10',
@@ -211,7 +211,7 @@ export const officesCube: Cube = defineCube('Offices', {
 // Productivity
 // =============================================================================
 
-export const productivityCube: Cube = defineCube('Productivity', {
+export const productivityCube = defineCube('Productivity', {
   sql: 'analytics.productivity p',
   sampleQueries: [
     'total lines of code and average pull requests, top 5',
@@ -349,7 +349,7 @@ export const productivityCube: Cube = defineCube('Productivity', {
 // Performance Reviews
 // =============================================================================
 
-export const performanceReviewsCube: Cube = defineCube('PerformanceReviews', {
+export const performanceReviewsCube = defineCube('PerformanceReviews', {
   sql: 'analytics.performance_reviews pr',
   sampleQueries: [
     'average performance rating per month, last 12 months',
@@ -446,7 +446,7 @@ export const performanceReviewsCube: Cube = defineCube('PerformanceReviews', {
 // PR Events
 // =============================================================================
 
-export const prEventsCube: Cube = defineCube('PREvents', {
+export const prEventsCube = defineCube('PREvents', {
   sql: 'analytics.pr_events pre',
   sampleQueries: [
     'PR events count by event type, top 5 types',
@@ -478,7 +478,7 @@ export const prEventsCube: Cube = defineCube('PREvents', {
 // Teams
 // =============================================================================
 
-export const teamsCube: Cube = defineCube('Teams', {
+export const teamsCube = defineCube('Teams', {
   sql: 'analytics.teams t',
   sampleQueries: [
     'teams count by department, top 10',
@@ -512,7 +512,7 @@ export const teamsCube: Cube = defineCube('Teams', {
 // Employee Teams (junction)
 // =============================================================================
 
-export const employeeTeamsCube: Cube = defineCube('EmployeeTeams', {
+export const employeeTeamsCube = defineCube('EmployeeTeams', {
   sql: 'analytics.employee_teams et',
   sampleQueries: [
     'team membership count by role, top 5 roles',
@@ -553,7 +553,7 @@ export const employeeTeamsCube: Cube = defineCube('EmployeeTeams', {
 // Skills
 // =============================================================================
 
-export const skillsCube: Cube = defineCube('Skills', {
+export const skillsCube = defineCube('Skills', {
   sql: 'analytics.skills s',
   sampleQueries: [
     'skill count and distinct categories by category, top 10 categories',
@@ -582,7 +582,7 @@ export const skillsCube: Cube = defineCube('Skills', {
 // Employee Skills (junction)
 // =============================================================================
 
-export const employeeSkillsCube: Cube = defineCube('EmployeeSkills', {
+export const employeeSkillsCube = defineCube('EmployeeSkills', {
   sql: 'analytics.employee_skills es',
   sampleQueries: [
     'average employee skill proficiency, top 10 employees',
@@ -666,7 +666,7 @@ export const allCubes = [
   employeeTeamsCube,
   skillsCube,
   employeeSkillsCube,
-]
+] as const satisfies readonly Cube[]
 
 // =============================================================================
 // Direct execution — compiles and prints example queries to stdout

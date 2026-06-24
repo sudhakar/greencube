@@ -214,3 +214,10 @@ export function scoreTokens(queryTokens: string[], targetTokens: string[]): { sc
   }
   return { score, matched }
 }
+
+/** Strip table alias prefix from a dimension SQL expression.
+ *  'e.name' → 'name', 'd.id' → 'id'.
+ *  Computed expressions (non-matching) are returned as-is. */
+export function fieldToColumn(sql: string): string {
+  return sql.replace(/^\w+\./, '')
+}

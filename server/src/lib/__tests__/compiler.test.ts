@@ -699,7 +699,7 @@ describe('multi-cube', () => {
   it('CTE cube WHERE is applied inside the CTE', () => {
     // Create a cube with both a hasMany relationship AND a where clause.
     // This cube will be CTE'd, and its WHERE should be inside the CTE.
-    const customersWithWhere: Cube = defineCube('CustomersWW', {
+    const customersWithWhere = defineCube('CustomersWW', {
       sql: 'analytics.customers c',
       where: 'c.deleted_at IS NULL',
       dimensions: {
@@ -717,7 +717,7 @@ describe('multi-cube', () => {
         },
       },
     })
-    const ordersWW: Cube = defineCube('OrdersWW', {
+    const ordersWW = defineCube('OrdersWW', {
       sql: 'analytics.orders o',
       dimensions: {
         id: { sql: 'o.id', type: 'number' },

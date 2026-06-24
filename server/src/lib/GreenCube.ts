@@ -232,11 +232,11 @@ interface Selection {
 }
 
 
-export function defineCube(
-  name: string,
-  definition: Omit<Cube, 'name'>,
-): Cube {
-  return { name, ...definition }
+export function defineCube<const T extends string, const D extends Omit<Cube, 'name'>>(
+  name: T,
+  definition: D,
+): D & { name: T } {
+  return { name, ...definition } as D & { name: T }
 }
 
 /** Parse `"Cube.field"` → `{ cube, field }`. */

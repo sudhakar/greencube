@@ -23,7 +23,7 @@
 import type { Cube } from '../GreenCube.ts'
 import { defineCube } from '../GreenCube.ts'
 
-export const customers: Cube = defineCube('Customers', {
+export const customers = defineCube('Customers', {
   sql: 'analytics.customers c',
   where: 'c.deleted_at IS NULL',
   sampleQueries: [
@@ -49,7 +49,7 @@ export const customers: Cube = defineCube('Customers', {
   },
 })
 
-export const orders: Cube = defineCube('Orders', {
+export const orders = defineCube('Orders', {
   sql: 'analytics.orders o',
   sampleQueries: [
     'total orders and completed orders, top 5 by status',
@@ -90,7 +90,7 @@ export const orders: Cube = defineCube('Orders', {
   },
 })
 
-export const orderItems: Cube = defineCube('OrderItems', {
+export const orderItems = defineCube('OrderItems', {
   sql: 'analytics.order_items oi',
   sampleQueries: [
     'total revenue and items sold, top 5 by product name',
@@ -149,7 +149,7 @@ export const orderItems: Cube = defineCube('OrderItems', {
   },
 })
 
-export const products: Cube = defineCube('Products', {
+export const products = defineCube('Products', {
   sql: 'analytics.products p',
   where: 'p.is_active = TRUE',
   sampleQueries: [
@@ -188,7 +188,7 @@ export const products: Cube = defineCube('Products', {
   },
 })
 
-export const suppliers: Cube = defineCube('Suppliers', {
+export const suppliers = defineCube('Suppliers', {
   sql: 'analytics.suppliers s',
   where: 's.is_active = TRUE',
   sampleQueries: [
@@ -223,7 +223,7 @@ export const suppliers: Cube = defineCube('Suppliers', {
   },
 })
 
-export const shipments: Cube = defineCube('Shipments', {
+export const shipments = defineCube('Shipments', {
   sql: 'analytics.shipments sh',
   sampleQueries: [
     'shipment count, total shipping cost and distinct carriers, top 5 by carrier',
