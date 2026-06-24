@@ -9,9 +9,10 @@ import { Hono } from 'hono'
 import type { Connection } from 'snowflake-sdk'
 import type { Dialect } from './dialects/Dialect.ts'
 import type { Cube, Query } from './GreenCube.ts'
-import { CubeQueryCompiler } from './GreenCube.ts'
+import { CubeQueryCompiler, SnowflakeDialect } from './GreenCube.ts'
 import type { Mutation } from './mutate.ts'
 import { MutationExecutor } from './mutate.ts'
+import { checkPermission } from './permissions.ts'
 import { exec, formatExplain, formatMeta } from './utils.ts'
 
 // =============================================================================
@@ -66,7 +67,13 @@ export function createCubeApp(
     try {
       const body = await c.req.json()
       const mutation: Mutation = body.mutation ?? body
-      const executor = new MutationExecutor(cubes, connection, dialect ?? new SnowflakeDialect())
+      const executor = new MutationExecutor(
+        cubes, connection, dialect ?? new SnowflakeDialect(),
+        (mutation, ctx) => {
+          const role = (ctx.user?.role as string | undefined)
+          return checkPermission(role, mutation.cube, mutation.operation, mutation.values)
+        },
+      )
       const result = await executor.execute(mutation, {
         headers: c.req.header() as Record<string, string>,
         user: (c as any).var?.user,

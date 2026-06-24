@@ -13,7 +13,7 @@ export interface Mutation {
   returning?: string[]
 }
 
-type AuthorizeFn = (mutation: Mutation, ctx: { headers?: Record<string, string>; user?: Record<string, unknown> }) => boolean | Promise<boolean>
+export type AuthorizeFn = (mutation: Mutation, ctx: { headers?: Record<string, string>; user?: Record<string, unknown> }) => boolean | Promise<boolean>
 
 const DIRECT_COLUMN_RE = /^\w+\.\w+$/
 
@@ -58,7 +58,7 @@ export class MutationExecutor {
     this.validate(mutation, cube)
 
     const { sql, params } = this.buildSql(mutation, cube)
-    const rows = await exec(this.connection, sql, params)
+    const rows = await exec(this.connection, sql, params as any)
     return { data: rows }
   }
 

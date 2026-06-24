@@ -12,6 +12,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { decode } from 'hono/jwt'
 import * as cubeDefs from './cubes.ts'
 import { SAMPLES } from './cubes.ts'
 import { createCubeApp } from './lib/api.ts'
@@ -51,6 +52,20 @@ const dialect = new SqliteDialect()
 const app = new Hono()
 
 app.use('*', cors())
+
+// Decode JWT from Authorization header into c.var.user (no verification — trusted issuer)
+app.use('/cube/*', async (c, next) => {
+  const auth = c.req.header('Authorization')
+  if (auth?.startsWith('Bearer ')) {
+    try {
+      const { payload } = decode(auth.slice(7))
+      ;(c as any).var.user = payload
+    } catch {
+      // Malformed token — treat as anonymous
+    }
+  }
+  await next()
+})
 
 app.get('/', (c) => {
   return c.json({
