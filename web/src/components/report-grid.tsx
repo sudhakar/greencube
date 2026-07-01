@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
-import GridLayout, { useContainerWidth } from 'react-grid-layout'
+import GridLayout, { type LayoutItem, useContainerWidth } from 'react-grid-layout'
 import { useReports } from '@/context/ReportContext'
-import { useWidgetData } from '@/hooks/useWidgetData'
-import type { LayoutItem, WidgetInstance } from '@/lib/types'
+import { useFetch } from '@/hooks/useFetch'
+import type { WidgetInstance } from '@/lib/types'
 import { AreaWidget } from '@/widgets/AreaWidget'
 import { BarWidget } from '@/widgets/BarWidget'
 import { LineWidget } from '@/widgets/LineWidget'
@@ -19,14 +19,14 @@ interface WidgetRendererProps {
 }
 
 function WidgetRenderer({ widget, onEdit, onClone, onDelete }: WidgetRendererProps) {
-  const { data, loading, error, refetch } = useWidgetData(widget.query)
+  const { data, isLoading, error, refetch } = useFetch(widget.query)
 
-  const hasData = !loading && !error && data.length > 0
+  const hasData = !isLoading && !error && data.length > 0
 
   return (
     <WidgetFrame
       title={widget.title}
-      loading={loading}
+      loading={isLoading}
       error={error}
       hasData={hasData}
       onRetry={refetch}
@@ -49,7 +49,7 @@ interface ReportGridProps {
 }
 
 const cleanLayout = (items: readonly LayoutItem[]) =>
-  items.map((l) => { const c = { ...(l as any) }; delete c.resizeHandles; return c })
+  items.map((l) => { const c = { ...(l as LayoutItem) }; delete c.resizeHandles; return c })
 
 export function ReportGrid({ onEditWidget }: ReportGridProps) {
   const { reports, activeId, patchLayout, removeWidget, duplicateWidget } = useReports()

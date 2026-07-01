@@ -1,10 +1,6 @@
-export type WidgetType = 'number' | 'bar' | 'line' | 'area' | 'pie' | 'table'
+import { type LayoutItem } from 'react-grid-layout'
 
-export interface LayoutItem {
-  i: string
-  x: number; y: number; w: number; h: number
-  minW?: number; minH?: number
-}
+export type WidgetType = 'number' | 'bar' | 'line' | 'area' | 'pie' | 'table'
 
 export interface WidgetInstance {
   id: string

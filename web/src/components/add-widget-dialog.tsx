@@ -22,7 +22,8 @@ import { InputGroup, InputGroupButton, InputGroupTextarea } from '@/components/u
 import { Toggle } from '@/components/ui/toggle'
 import { CompactAddButton, CompactArrayFieldTemplate, CompactArrayFieldTitleTemplate, CompactArrayItemTemplate, CompactObjectFieldTemplate, FieldSelect, FlatFormatList, FormatSelect, MultiFieldSelect, PrefixSelect, TitleWidget, XsBaseInputTemplate } from '@/components/widget-config'
 import { useReports } from '@/context/ReportContext'
-import { executeQuery, fetchMeta } from '@/lib/api'
+import { fetchMeta } from '@/lib/api'
+import { queryCube } from '@/lib/cube'
 import { fieldType } from '@/lib/meta'
 import { addWidget, updateWidget } from '@/lib/storage'
 import type { Cube, CubeMeta, WidgetInstance, WidgetType } from '@/lib/types'
@@ -136,8 +137,8 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
     try {
       setPreviewLoading(true)
       setPreviewError(null)
-      const result = await executeQuery({ ...query, limit: 100 })
-      setPreviewData(result.data ?? [])
+      const data = await queryCube({ ...query, limit: 100 })
+      setPreviewData(data ?? [])
     } catch (e) {
       setPreviewData([])
       console.log(`runPreview`, e)

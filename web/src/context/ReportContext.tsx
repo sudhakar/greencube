@@ -1,6 +1,7 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 import { cloneWidget, deleteWidget, getReports, onStorageChange, updateLayout } from '@/lib/storage'
-import type { LayoutItem, Report } from '@/lib/types'
+import type { Report } from '@/lib/types'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+import { type LayoutItem } from 'react-grid-layout'
 
 interface ReportContextValue {
   reports: Report[]

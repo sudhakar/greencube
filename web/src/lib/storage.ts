@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid'
-import type { Report, WidgetInstance, LayoutItem, WidgetType } from './types'
+import { type LayoutItem } from 'react-grid-layout'
+import type { Report, WidgetInstance, WidgetType } from './types'
 
 const STORAGE_KEY = 'greencube-reports'
 
