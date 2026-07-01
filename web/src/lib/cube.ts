@@ -101,16 +101,13 @@ export class QueryCache {
 			}
 		}
 
-		const replacedExisting = Object.keys(data[0]).some((n) => e.cols.has(n));
 		for (const name of Object.keys(data[0])) {
 			e.cols.set(
 				name,
 				data.map((r) => r[name]),
 			);
 		}
-		if (replacedExisting) {
-			e.rows.clear();
-		}
+		e.rows.clear();
 	}
 
 	/** Columns requested but not yet cached */
@@ -153,10 +150,6 @@ export class QueryCache {
 		if (!e) {
 			e = { cols: new Map(), rows: new Map(), refs: new Map() };
 			this.entries.set(fp, e);
-			if (this.entries.size > this.maxEntries) {
-				const first = this.entries.keys().next().value!;
-				this.entries.delete(first);
-			}
 		}
 		const ck = QueryCache.allCols(q).sort().join(",");
 		e.refs.set(ck, (e.refs.get(ck) ?? 0) + 1);
@@ -233,7 +226,6 @@ export async function queryCube(
 	}
 
 	if (needSet.size < QueryCache.selectCols(q).length) {
-		// Partial hit — only fetch uncached columns
 		if (!qq.ungrouped) {
 			if (qq.dimensions !== undefined) fetchQ.dimensions = qq.dimensions;
 			if (qq.timeDimensions !== undefined)
@@ -254,22 +246,13 @@ export async function queryCube(
 			}
 		}
 	} else {
-		// Full miss — fetch everything
 		Object.assign(fetchQ, qq);
 	}
 
 	const fetchKey = QueryCache.fingerprint(q) + "|" + need.sort().join(",");
 	await queryCache.dedup(fetchKey, async () => {
 		const res = await doFetch(fetchQ);
-		const stripped =
-			needSet.size < QueryCache.selectCols(q).length
-				? res.data.map((r: Row) => {
-						const p: Row = {};
-						for (const c of need) p[c] = r[c];
-						return p;
-					})
-				: res.data;
-		queryCache.set(q, stripped);
+		queryCache.set(q, res.data);
 	});
 
 	return queryCache.get(q)!;

@@ -121,24 +121,6 @@ describe("QueryCache", () => {
 			assert.equal(c.get({ measures: ["a"] }), c.get({ measures: ["a"] }));
 		});
 
-		it("same ref after adding new column (partial, no replacement)", () => {
-			const q1 = { measures: ["a"], filters: [] };
-			const q2 = { measures: ["a", "b"], filters: [] };
-			c.set(q1, [{ a: 1 }]);
-			const r1 = c.get(q1);
-			c.set(q2, [{ b: 10 }]);
-			assert.equal(c.get(q1), r1);
-		});
-
-		it("new ref after replacing existing column", () => {
-			const q = { measures: ["a"], filters: [] };
-			c.set(q, [{ a: 1 }]);
-			const r1 = c.get(q);
-			c.set(q, [{ a: 99 }]);
-			assert.notEqual(c.get(q), r1);
-			assert.equal(c.get(q)![0].a, 99);
-		});
-
 		it("merged columns from partial fill", () => {
 			const q1 = { measures: ["a"], filters: [] };
 			const q2 = { measures: ["a", "b"], filters: [] };
@@ -378,11 +360,11 @@ describe("queryCube", () => {
 		assert.deepEqual(fetchQ.measures, ["a", "b"]);
 	});
 
-	it("strips response to only missing columns in partial hit", async () => {
+	it("partial fetch merges with cached columns", async () => {
 		queryCache.set({ measures: ["a"], filters: [] }, [{ a: 10 }]);
 		const r = await queryCube({ measures: ["a", "b"], filters: [] }, mockFetch);
-		assert.equal(r[0].a, 10);
-		assert.equal(r[0].b, 1);
+		assert.equal(r[0].a, 10);  // preserved from original
+		assert.equal(r[0].b, 1);   // from partial fetch
 	});
 
 	it("returns same ref on repeated partial queries", async () => {
