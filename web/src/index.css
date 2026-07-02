@@ -203,7 +203,7 @@ body {
 
 .dark {
   --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
+  --foreground: hsl(186, 15%, 76%);
   --card: oklch(0.21 0.006 285.885);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.21 0.006 285.885);
@@ -214,12 +214,12 @@ body {
   --secondary-foreground: oklch(0.985 0 0);
   --muted: rgb(23, 41, 44);
   --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: hsla(186, 100%, 35%, 0.70);
+  --accent: hsl(185, 100%, 11%);
   --accent-foreground: oklch(0.97 0.014 254.604);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: hsla(193, 97%, 24%, 0.20);
-  --input: oklch(1 0 0 / 15%);
-  --ring: hsla(193, 97%, 24%, 0.10);
+  --border: rgb(0, 27, 34);
+  --input: rgb(20, 29, 31);
+  --ring: hsla(186, 100%, 35%, 0.70);
   /* --chart-5: oklch(0.7124 0.0606 248.6896);
   --chart-2: oklch(0.6678 0.1546 41.6200);
   --chart-3: oklch(0.5957 0.1807 19.9763);

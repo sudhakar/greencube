@@ -90,6 +90,7 @@ export function ReportGrid({ onEditWidget }: ReportGridProps) {
             margin: [15, 15] as [number, number],
             containerPadding: [0, 0] as [number, number],
           }}
+          style={{ color: 'inherit' }}
         >
           {report.widgets.map((w) => (
             <div key={w.id}>

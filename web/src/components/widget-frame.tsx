@@ -31,12 +31,14 @@ export function WidgetFrame({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-4xl border  bg-cyan-900/10 backdrop-blur-xs">
+    <div className="flex h-full flex-col overflow-hidden rounded-4xl border drag-handle bg-cyan-900/10 backdrop-blur-xs" onDoubleClick={onEdit}>
       <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
-        <ContextMenuTrigger className="justify-center rounded-md p-1 text-muted-foreground">
-          <div className="drag-handle group flex cursor-move justify-between px-3 pt-1.5 pb-1.5" onDoubleClick={onEdit}>
-            {title && (<span className="truncate text-sm font-medium">{title}</span>)}
-          </div>
+        <ContextMenuTrigger className="justify-center rounded-md pt-2 text-muted-foreground">
+          {title && (
+            <div className="group flex cursor-move justify-between px-3 pt-1.5 pb-1.5">
+              <span className="truncate text-sm font-medium">{title}</span>
+            </div>
+          )}
         </ContextMenuTrigger>
         <ContextMenuContent align="end" className="w-28">
           <ContextMenuItem onClick={onEdit}>Edit</ContextMenuItem>

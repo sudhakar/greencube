@@ -1,3 +1,4 @@
+import { IconArrowDown, IconArrowUp, IconSelector } from '@tabler/icons-react'
 import {
   flexRender,
   getCoreRowModel,
@@ -27,6 +28,12 @@ interface TableWidgetProps {
   data: Record<string, unknown>[]
   config?: TableConfig
 }
+
+const CARET_MAP = {
+  asc: <IconArrowUp size={12} />,
+  desc: <IconArrowDown size={12} />,
+  none: <IconSelector size={12} />,
+} as const
 
 export function TableWidget({ data, config }: TableWidgetProps) {
   const [globalFilter, setGlobalFilter] = useState('')
@@ -71,6 +78,7 @@ export function TableWidget({ data, config }: TableWidgetProps) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    enableColumnResizing: true,
   })
 
   const rows = table.getRowModel().rows
@@ -86,32 +94,36 @@ export function TableWidget({ data, config }: TableWidgetProps) {
   if (!data.length) return null
 
   return (
-    <div className="flex h-full flex-col gap-2 overflow-hidden">
-      <div className='p-2 px-3 pt-0 text-[8px]'>
+    <div className="relative flex h-full flex-col gap-0 overflow-hidden" style={{ ['--table-header-height' as never]: '28px' }}>
+      <div className="flex gap-2 items-center justify-between pt-1 pb-3 px-3 text-[8px]">
+        <h4 className="flex-1 text-nowrap text-xs">Table tiltle</h4>
         <Input
           placeholder="Search..."
-          className="h-6 text-[8px]"
+          className="h-6 px-1.5 md:text-[12px] w-40"
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
         />
       </div>
+
+      <div
+        className="bg-muted/40"
+        style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}
+      >
+        {table.getHeaderGroups().flatMap((hg) => hg.headers).map((header) => (
+          <div
+            key={header.id}
+            className="cursor-pointer select-none flex items-center justify-between px-2 py-1 text-xs font-medium"
+            onClick={header.column.getToggleSortingHandler()}
+          >
+            {String(header.column.columnDef.header ?? '')}
+
+            {CARET_MAP[header.column.getIsSorted() as ('asc' | 'desc') || 'none']}
+          </div>
+        ))}
+      </div>
+
       <div ref={scrollRef} className="flex-1 overflow-auto">
         <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-          <div
-            className="sticky top-0 z-10 bg-muted"
-            style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}
-          >
-            {table.getHeaderGroups().flatMap((hg) => hg.headers).map((header) => (
-              <div
-                key={header.id}
-                className="cursor-pointer select-none px-2 py-1 text-xs font-medium hover:text-foreground"
-                onClick={header.column.getToggleSortingHandler()}
-              >
-                {String(header.column.columnDef.header ?? '')}
-                {{ asc: ' ↑', desc: ' ↓' }[header.column.getIsSorted() as string] ?? ''}
-              </div>
-            ))}
-          </div>
           {virtualizer.getVirtualItems().map((vitem) => {
             const row = rows[vitem.index]
             return (

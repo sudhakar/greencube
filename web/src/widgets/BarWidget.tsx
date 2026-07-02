@@ -32,7 +32,7 @@ export function BarWidget({ data, config }: BarWidgetProps) {
 
   return (
     <ResponsiveContainer width="100%" height="100%" className="p-2">
-      <BarChart data={chartData} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+      <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
         {config.showGrid !== false && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
         <XAxis dataKey={xField} tick={axisTickStyle} stroke="var(--border)" height={15} tickFormatter={(v) => formatValue(v, config.xFormat, detectFieldType(xField))} />
         <YAxis tick={axisTickStyle} stroke="var(--border)" width="auto" tickFormatter={(v) => formatValue(v, config.yFormat, 'number')} />
