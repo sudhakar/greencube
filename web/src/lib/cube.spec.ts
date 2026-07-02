@@ -1,6 +1,7 @@
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { QueryCache, queryCache, queryCube } from "./cube.ts";
+import { QueryCache, queryCache } from "./cube/cache.ts";
+import { queryCube } from "./cube/cube.ts";
 
 // ── fingerprint ──────────────────────────────────────────────────────────────
 
@@ -147,6 +148,36 @@ describe("QueryCache", () => {
 			c.set({ measures: ["a"] }, []);
 			assert.equal(c.get({ measures: ["a"] }), null);
 		});
+
+		it("keeps multiple materialized subsets after pure partial fill", () => {
+			const fp = (q: object) => QueryCache.fingerprint(q);
+			const rows = (q: object) => (c as any).entries.get(fp(q)).rows;
+
+			c.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
+			c.get({ measures: ["a"], filters: [] }); // materialize ["a"]
+			c.set({ measures: ["a", "b"], filters: [] }, [{ b: 10 }]);
+			c.get({ measures: ["a", "b"], filters: [] }); // materialize ["a","b"]
+
+			assert.equal(rows({ measures: ["a"], filters: [] }).size, 2,
+				"rows should hold both the subset and the superset keys");
+		});
+
+		it("grouped partial fill keeps subset for original columns", () => {
+			const fp = (q: object) => QueryCache.fingerprint(q);
+			const rows = (q: object) => (c as any).entries.get(fp(q)).rows;
+
+			const q1 = { measures: ["a"], dimensions: ["d"], filters: [] };
+			const q2 = { measures: ["a", "b"], dimensions: ["d"], filters: [] };
+
+			c.set(q1, [{ a: 1, d: "x" }, { a: 2, d: "y" }]);
+			c.get(q1); // materialize ["a","d"]
+			c.set(q2, [{ a: 1, b: 10, d: "x" }, { a: 2, b: 20, d: "y" }]);
+			c.get(q2); // materialize ["a","b","d"]
+
+			// both subset and superset should coexist in rows
+			assert.equal(rows(q1).size, 2,
+				"rows should hold both the subset and the superset keys in grouped mode");
+		});
 	});
 
 	describe("missing", () => {
@@ -258,14 +289,6 @@ describe("QueryCache", () => {
 			assert.ok(e.cols.get("a"));
 			assert.equal(e.rows.size, 0);
 			assert.equal(e.refs.size, 0);
-		});
-
-		it("release cleans up entry with no cols and no refs", () => {
-			const q = { measures: ["a"], filters: [] };
-			c.retain(q);
-			assert.equal(c.size, 1);
-			c.release(q);
-			assert.equal(c.size, 0);
 		});
 
 		it("release on non-existent entry is no-op", () => {

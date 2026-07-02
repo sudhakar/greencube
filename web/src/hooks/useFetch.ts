@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { queryCache, queryCube, type QueryLike } from "@/lib/cube";
+import { useEffect, useState } from "react";
+import { queryCache } from "@/lib/cube/cache";
+import { queryCube } from "@/lib/cube/cube";
+import type { Query } from "@/lib/cube/types";
 
 type Row = Record<string, unknown>;
 
@@ -9,24 +11,33 @@ interface FetchState {
 	error: string | null;
 }
 
-export function useFetch(query: QueryLike): FetchState & { refetch: () => void } {
-	const key = JSON.stringify(query);
+/** `query: null` disables fetching (no cache read, no network, no retain). */
+export function useFetch(
+	query: Query | null,
+): FetchState & { refetch: () => void } {
+	const key = query ? JSON.stringify(query) : "";
 
 	const [state, setState] = useState<FetchState>(() => {
-		const cached = queryCache.get(query);
-		return cached ? { data: cached, isLoading: false, error: null } : { data: [], isLoading: true, error: null };
+		const cached = query ? queryCache.get(query) : null;
+		return cached
+			? { data: cached, isLoading: false, error: null }
+			: { data: [], isLoading: !!query, error: null };
 	});
 
 	useEffect(() => {
+		if (!query) return;
 		queryCache.retain(query);
-		const cached = queryCache.get(query);
-		if (cached) return () => queryCache.release(query);
 		let cancelled = false;
-		queryCube(query).then((data) => {
-			if (!cancelled) setState({ data, isLoading: false, error: null });
-		}).catch((err) => {
-			if (!cancelled) setState({ data: [], isLoading: false, error: (err as Error).message });
-		});
+		queryCube(query)
+			.then(
+				(data) =>
+					cancelled || setState({ data, isLoading: false, error: null }),
+			)
+			.catch(
+				(err: Error) =>
+					cancelled ||
+					setState({ data: [], isLoading: false, error: err.message }),
+			);
 		return () => {
 			cancelled = true;
 			queryCache.release(query);
@@ -36,6 +47,7 @@ export function useFetch(query: QueryLike): FetchState & { refetch: () => void }
 	}, [key]);
 
 	async function refetch() {
+		if (!query) return;
 		queryCache.invalidate(query);
 		queryCache.retain(query);
 		setState((s) => ({ ...s, isLoading: true, error: null }));
@@ -47,5 +59,5 @@ export function useFetch(query: QueryLike): FetchState & { refetch: () => void }
 		}
 	}
 
-	return { data: state.data, isLoading: state.isLoading, error: state.error, refetch };
+	return { ...state, refetch };
 }
