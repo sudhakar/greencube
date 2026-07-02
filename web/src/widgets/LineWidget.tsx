@@ -34,8 +34,8 @@ export function LineWidget({ data, config }: LineWidgetProps) {
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
         {config.showGrid !== false && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
-        <XAxis dataKey={xField} tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.xFormat, detectFieldType(xField))} />
-        <YAxis tick={axisTickStyle} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.yFormat, 'number')} />
+        <XAxis dataKey={xField} tick={axisTickStyle} height={15} stroke="var(--border)" tickFormatter={(v) => formatValue(v, config.xFormat, detectFieldType(xField))} />
+        <YAxis tick={axisTickStyle} stroke="var(--border)" width="auto" tickFormatter={(v) => formatValue(v, config.yFormat, 'number')} />
         <Tooltip {...tooltipProps} />
         {config.showLegend !== false && <Legend formatter={legendFormatter} />}
         {yFields.map((yf, i) => (
