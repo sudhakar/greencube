@@ -1,31 +1,53 @@
-import type { QueryResult } from "../types.ts";
-import { QueryCache, queryCache } from "./cache.ts";
-import type { Query } from "./types.ts";
+import { QueryCache } from "./cache.ts";
+import type { Mutation, Query } from "./types.ts";
+import type { CubeMeta, QueryResult } from "./types.ts";
+import { type Fetcher, fetcher } from "./fetcher.ts";
 
-let defaultFetch: Promise<(q: object) => Promise<QueryResult>>;
+type Row = Record<string, unknown>;
 
-export async function queryCube(
-	q: Query,
-	fetch?: (q: object) => Promise<QueryResult>,
-) {
-	const doFetch =
-		fetch ??
-		(await (defaultFetch ??= import("../api").then((m) => m.executeQuery)));
-	const cached = queryCache.get(q);
-	if (cached) return cached;
+export class Cube {
+	cache = new QueryCache();
+	private fetch: Fetcher;
+	private metaPromise: Promise<CubeMeta> | null = null;
 
-	const need = queryCache.missing(q);
-	const fetchQ =
-		need.length < QueryCache.selectCols(q).length ? partialQuery(q, need) : q;
+	constructor(fetch?: Fetcher) {
+		this.fetch = fetch ?? fetcher();
+	}
 
-	const dedupKey = QueryCache.fingerprint(q) + "|" + need.sort().join(",");
-	await queryCache.dedup(dedupKey, () =>
-		doFetch(fetchQ).then((res) => {
-			queryCache.set(q, res.data);
-		}),
-	);
+	async meta(): Promise<CubeMeta> {
+		if (!this.metaPromise)
+			this.metaPromise = this.fetch<CubeMeta>("/meta");
+		return await this.metaPromise;
+	}
 
-	return queryCache.get(q)!;
+	async query(q: Query): Promise<Row[]> {
+		const cached = this.cache.get(q);
+		if (cached) return cached;
+
+		const need = this.cache.missing(q);
+		const fetchQ =
+			need.length < QueryCache.selectCols(q).length
+				? partialQuery(q, need)
+				: q;
+
+		const dedupKey =
+			QueryCache.fingerprint(q) + "|" + need.sort().join(",");
+		await this.cache.dedup(dedupKey, () =>
+			this.fetch<QueryResult>("/query", fetchQ).then((res) => {
+				this.cache.set(q, res.data);
+			}),
+		);
+
+		return this.cache.get(q)!;
+	}
+
+	async explain(q: Query): Promise<{ sql: string }> {
+		return this.fetch<{ sql: string }>("/explain", q);
+	}
+
+	async mutate(m: Mutation): Promise<QueryResult> {
+		return this.fetch<QueryResult>("/mutate", m);
+	}
 }
 
 function partialQuery(q: Query, need: string[]) {
@@ -51,3 +73,5 @@ function partialQuery(q: Query, need: string[]) {
 
 	return fq;
 }
+
+export const cube = new Cube();

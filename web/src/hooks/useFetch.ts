@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { queryCache } from "@/lib/cube/cache";
-import { queryCube } from "@/lib/cube/cube";
+import { cube } from "@/lib/cube/cube";
 import type { Query } from "@/lib/cube/types";
 
 type Row = Record<string, unknown>;
@@ -18,7 +17,7 @@ export function useFetch(
 	const key = query ? JSON.stringify(query) : "";
 
 	const [state, setState] = useState<FetchState>(() => {
-		const cached = query ? queryCache.get(query) : null;
+		const cached = query ? cube.cache.get(query) : null;
 		return cached
 			? { data: cached, isLoading: false, error: null }
 			: { data: [], isLoading: !!query, error: null };
@@ -26,21 +25,16 @@ export function useFetch(
 
 	useEffect(() => {
 		if (!query) return;
-		queryCache.retain(query);
+		cube.cache.retain(query);
 		let cancelled = false;
-		queryCube(query)
-			.then(
-				(data) =>
-					cancelled || setState({ data, isLoading: false, error: null }),
-			)
-			.catch(
-				(err: Error) =>
-					cancelled ||
-					setState({ data: [], isLoading: false, error: err.message }),
-			);
+		cube.query(query).then(
+			(data) => cancelled || setState({ data, isLoading: false, error: null }),
+			(err: Error) =>
+				cancelled || setState({ data: [], isLoading: false, error: err.message }),
+		);
 		return () => {
 			cancelled = true;
-			queryCache.release(query);
+			cube.cache.release(query);
 		};
 		// `key` encodes query content. Using `query` as dep would fire on every ref change.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,11 +42,11 @@ export function useFetch(
 
 	async function refetch() {
 		if (!query) return;
-		queryCache.invalidate(query);
-		queryCache.retain(query);
+		cube.cache.invalidate(query);
+		cube.cache.retain(query);
 		setState((s) => ({ ...s, isLoading: true, error: null }));
 		try {
-			const data = await queryCube(query);
+			const data = await cube.query(query);
 			setState({ data, isLoading: false, error: null });
 		} catch (err) {
 			setState({ data: [], isLoading: false, error: (err as Error).message });

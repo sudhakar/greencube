@@ -1,5 +1,5 @@
-import type { CubeMeta, Field } from './types'
-import { fetchMeta } from './api'
+import type { CubeMeta, Field } from './cube/types'
+import { cube } from './cube/cube'
 
 export function resolveField(meta: CubeMeta, qualifiedName?: string): Field | undefined {
   if (!qualifiedName) return undefined
@@ -30,7 +30,7 @@ let metaPromise: Promise<CubeMeta> | null = null
 
 export async function ensureMeta(): Promise<CubeMeta> {
   if (metaCache) return metaCache
-  if (!metaPromise) metaPromise = fetchMeta()
+  if (!metaPromise) metaPromise = cube.meta()
   metaCache = await metaPromise
   return metaCache
 }

@@ -1,7 +1,6 @@
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { QueryCache, queryCache } from "./cube/cache.ts";
-import { queryCube } from "./cube/cube.ts";
+import { QueryCache } from "../cache.ts";
 
 // ── fingerprint ──────────────────────────────────────────────────────────────
 
@@ -326,119 +325,5 @@ describe("QueryCache", () => {
 			assert.notEqual(r1, r2);
 			assert.deepEqual(r1, r2);
 		});
-	});
-});
-
-// ── queryCube ────────────────────────────────────────────────────────────────
-
-describe("queryCube", () => {
-	let calls: object[];
-	let mockFetch: (q: object) => Promise<{ data: Record<string, unknown>[] }>;
-
-	beforeEach(() => {
-		queryCache.clear();
-		calls = [];
-		mockFetch = (q) => {
-			calls.push(q);
-			const qq = q as any;
-			const cols: string[] = [
-				...(qq.measures ?? []),
-				...(qq.dimensions ?? []),
-				...(qq.timeDimensions ?? []).map((td: any) => td.dimension),
-			];
-			const row: Record<string, unknown> = {};
-			for (const c of cols) row[c] = 1;
-			return Promise.resolve({ data: [row] });
-		};
-	});
-
-	it("returns cached data on hit", async () => {
-		queryCache.set({ measures: ["a"] }, [{ a: 1 }]);
-		const r = await queryCube({ measures: ["a"] }, mockFetch);
-		assert.deepEqual(r, [{ a: 1 }]);
-		assert.equal(calls.length, 0);
-	});
-
-	it("fetches and caches on miss", async () => {
-		const r = await queryCube({ measures: ["a"] }, mockFetch);
-		assert.deepEqual(r, [{ a: 1 }]);
-		assert.equal(calls.length, 1);
-		const r2 = await queryCube({ measures: ["a"] }, mockFetch);
-		assert.equal(r, r2);
-		assert.equal(calls.length, 1);
-	});
-
-	it("partial hit fetches only missing columns", async () => {
-		queryCache.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
-		await queryCube({ measures: ["a", "b"], filters: [] }, mockFetch);
-		assert.equal(calls.length, 1);
-		const fetchQ = calls[0] as any;
-		assert.deepEqual(fetchQ.measures, ["b"]);
-	});
-
-	it("full miss fetches entire query", async () => {
-		await queryCube({ measures: ["a", "b"], filters: [] }, mockFetch);
-		assert.equal(calls.length, 1);
-		const fetchQ = calls[0] as any;
-		assert.deepEqual(fetchQ.measures, ["a", "b"]);
-	});
-
-	it("partial fetch merges with cached columns", async () => {
-		queryCache.set({ measures: ["a"], filters: [] }, [{ a: 10 }]);
-		const r = await queryCube({ measures: ["a", "b"], filters: [] }, mockFetch);
-		assert.equal(r[0].a, 10);  // preserved from original
-		assert.equal(r[0].b, 1);   // from partial fetch
-	});
-
-	it("returns same ref on repeated partial queries", async () => {
-		queryCache.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
-		await queryCube({ measures: ["a", "b"], filters: [] }, mockFetch);
-		const r1 = await queryCube({ measures: ["a", "b"], filters: [] }, mockFetch);
-		const r2 = await queryCube({ measures: ["a", "b"], filters: [] }, mockFetch);
-		assert.equal(r1, r2);
-	});
-
-	it("grouped vs ungrouped use different fingerprints", async () => {
-		await queryCube({ measures: ["a"], dimensions: ["d"] }, mockFetch);
-		await queryCube({ measures: ["a"], dimensions: ["d"], ungrouped: true }, mockFetch);
-		assert.equal(calls.length, 2);
-	});
-
-	it("partial hit in ungrouped mode fetches only missing dimensions", async () => {
-		queryCache.set(
-			{ dimensions: ["d1"], ungrouped: true, filters: [] },
-			[{ d1: "x" }],
-		);
-		await queryCube(
-			{ dimensions: ["d1", "d2"], ungrouped: true, filters: [] },
-			mockFetch,
-		);
-		assert.equal(calls.length, 1);
-		const fetchQ = calls[0] as any;
-		assert.deepEqual(fetchQ.dimensions, ["d2"]);
-	});
-
-	it("rejects when fetch fails", async () => {
-		await assert.rejects(
-			queryCube({ measures: ["err"] }, () => Promise.reject(new Error("network error"))),
-			/network error/,
-		);
-	});
-
-	it("does not populate cache on fetch failure", async () => {
-		const q = { measures: ["x"], filters: [] };
-		await queryCube(q, () => Promise.reject(new Error("fail"))).catch(() => {});
-		assert.equal(queryCache.get(q), null);
-	});
-
-	it("allows re-fetch after previous failure", async () => {
-		const q = { measures: ["x"], filters: [] };
-		let fail = true;
-		const flip = () => fail ? Promise.reject(new Error("nope")) : Promise.resolve({ data: [{ x: 1 }] });
-		await queryCube(q, flip).catch(() => {});
-		assert.equal(queryCache.get(q), null);
-		fail = false;
-		const r = await queryCube(q, flip);
-		assert.deepEqual(r, [{ x: 1 }]);
 	});
 });

@@ -182,4 +182,4 @@ export class QueryCache {
 	}
 }
 
-export const queryCache = new QueryCache();
+
