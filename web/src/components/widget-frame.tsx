@@ -31,11 +31,11 @@ export function WidgetFrame({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-sm border border-0 bg-card">
+    <div className="flex h-full flex-col overflow-hidden rounded-4xl border  bg-cyan-900/10 p-2 pt-0 backdrop-blur-xs">
       <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <ContextMenuTrigger className="justify-center rounded-md p-1 text-muted-foreground">
           <div className="drag-handle group flex cursor-move justify-between px-3 pt-1.5 pb-1.5" onDoubleClick={onEdit}>
-            <span className="truncate text-sm font-medium">{title}</span>
+            {title && (<span className="truncate text-sm font-medium">{title}</span>)}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent align="end" className="w-28">

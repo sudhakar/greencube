@@ -6,6 +6,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { Separator } from '@/components/ui/separator'
 import { ReportProvider, useReports } from '@/context/ReportContext'
 import type { WidgetInstance } from '@/lib/types'
+import { BgGradient } from './components/BgGradient'
 import { AppShell2 } from './components/rjsf'
 
 function AppShell() {
@@ -31,7 +32,7 @@ function AppShell() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen">
       <aside className="flex w-60 flex-col border-r">
         <div className="flex items-center justify-between px-3 py-2">
           <h1 className="text-sm font-semibold">GreenCube</h1>
@@ -57,6 +58,7 @@ function AppShell() {
 export default function App() {
   return (
     <ReportProvider>
+      <BgGradient />
       <AppShell />
     </ReportProvider>
   )

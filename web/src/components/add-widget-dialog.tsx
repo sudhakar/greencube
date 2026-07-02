@@ -22,8 +22,9 @@ import { InputGroup, InputGroupButton, InputGroupTextarea } from '@/components/u
 import { Toggle } from '@/components/ui/toggle'
 import { CompactAddButton, CompactArrayFieldTemplate, CompactArrayFieldTitleTemplate, CompactArrayItemTemplate, CompactObjectFieldTemplate, FieldSelect, FlatFormatList, FormatSelect, MultiFieldSelect, PrefixSelect, TitleWidget, XsBaseInputTemplate } from '@/components/widget-config'
 import { useReports } from '@/context/ReportContext'
+import { useFetch } from '@/hooks/useFetch'
 import { fetchMeta } from '@/lib/api'
-import { queryCube } from '@/lib/cube'
+import type { Query } from '@/lib/cube/types'
 import { fieldType } from '@/lib/meta'
 import { addWidget, updateWidget } from '@/lib/storage'
 import type { Cube, CubeMeta, WidgetInstance, WidgetType } from '@/lib/types'
@@ -72,19 +73,21 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
   const [queryText, setQueryText] = useState(DEFAULT_QUERY)
   const [config, setConfig] = useState<Record<string, unknown>>({})
   const [meta, setMeta] = useState<CubeMeta | null>(null)
-  const [previewData, setPreviewData] = useState<Record<string, unknown>[] | null>(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
+  const [committedQuery, setCommittedQuery] = useState<Query | null>(null)
+  const [parseError, setParseError] = useState<string | null>(null)
   const [collapsedCubes, setCollapsedCubes] = useState<Record<string, boolean>>({})
   const [step, setStep] = useState<'fields' | 'configure'>('fields')
   const [showQuery, setShowQuery] = useState(false)
-  const [previewError, setPreviewError] = useState<string | null>(null)
+
+  const { data: previewData, isLoading: previewLoading, error } = useFetch(committedQuery)
+  const previewError = parseError ?? error
 
   useEffect(() => {
     if (editingWidget && open) {
       setWidgetType(editingWidget.type)
       setQueryText(JSON.stringify(editingWidget.query, null, 2))
       setConfig({ title: editingWidget.title, ...editingWidget.config as Record<string, unknown> })
-      runPreview(editingWidget.query)
+      setCommittedQuery({ ...editingWidget.query, limit: 100 })
     }
   }, [editingWidget, open])
 
@@ -116,7 +119,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
 
       const query = { dimensions: dims, timeDimensions: timeDims, measures: selectedMeasures }
       setQueryText(JSON.stringify(query, null, 2))
-      runPreview(query)
+      setCommittedQuery({ ...query, limit: 100 })
     }
   }, [open, meta, isEditing, queryText])
 
@@ -126,30 +129,20 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
       setWidgetType('bar')
       setQueryText(DEFAULT_QUERY)
       setConfig({})
-      setPreviewData(null)
-      setPreviewError(null)
+      setCommittedQuery(null)
+      setParseError(null)
       setShowQuery(false)
       setStep('fields')
     }
   }
 
-  const runPreview = async (query: object) => {
-    try {
-      setPreviewLoading(true)
-      setPreviewError(null)
-      const data = await queryCube({ ...query, limit: 100 })
-      setPreviewData(data ?? [])
-    } catch (e) {
-      setPreviewData([])
-      console.log(`runPreview`, e)
-      setPreviewError(`Unable to preview: Unsupported Query`)
-    } finally {
-      setPreviewLoading(false)
-    }
-  }
-
   const handlePreview = () => {
-    try { runPreview(JSON.parse(queryText)) } catch (e) { setPreviewData([]); setPreviewError(e instanceof Error ? e.message : 'Invalid query') }
+    try {
+      setCommittedQuery({ ...JSON.parse(queryText), limit: 100 })
+      setParseError(null)
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'Invalid query')
+    }
   }
 
   const deriveConfig = (widgetType: WidgetType): Record<string, unknown> => {
@@ -223,7 +216,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
       }
 
       setQueryText(JSON.stringify(q, null, 2))
-      runPreview(q)
+      setCommittedQuery({ ...q, limit: 100 })
     } catch { /* ignore parse errors */ }
   }
 
@@ -269,7 +262,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
         }
       }
       setQueryText(JSON.stringify(q, null, 2))
-      runPreview(q)
+      setCommittedQuery({ ...q, limit: 100 })
     } catch { /* ignore parse errors */ }
   }
 
@@ -277,7 +270,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
     if (!widgetType || !activeId) return
     const query = JSON.parse(queryText)
     const { title: rawTitle, ...configRest } = config
-    const widgetTitle = ((rawTitle as string) ?? '').trim() || widgetType
+    const widgetTitle = ((rawTitle as string) ?? '').trim()
 
     if (isEditing && editingWidget) {
       updateWidget(activeId, editingWidget.id, {
@@ -413,7 +406,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                       </table>
                     </div>
                   )}
-                  {!previewError && previewData !== null && previewData.length === 0 && (
+                  {!previewError && !previewLoading && previewData.length === 0 && (
                     <div className="h-full overflow-auto rounded border border-dashed text-xs p-4 text-center text-muted-foreground pt-12">
                       No data. Run a query to see results.
                     </div>

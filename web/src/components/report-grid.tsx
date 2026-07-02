@@ -87,7 +87,7 @@ export function ReportGrid({ onEditWidget }: ReportGridProps) {
           gridConfig={{
             cols: 40,
             rowHeight: 12,
-            margin: [2, 2] as [number, number],
+            margin: [15, 15] as [number, number],
             containerPadding: [0, 0] as [number, number],
           }}
         >
