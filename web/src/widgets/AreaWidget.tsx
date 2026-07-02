@@ -31,7 +31,7 @@ export function AreaWidget({ data, config }: AreaWidgetProps) {
   const chartData = config.limit ? data.slice(0, config.limit) : data
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" className="p-2">
       <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
         {config.showGrid !== false && <CartesianGrid strokeDasharray="3 3" className="stroke-border" />}
         <XAxis dataKey={xField} tick={axisTickStyle} stroke="var(--border)" height={15} tickFormatter={(v) => formatValue(v, config.xFormat, detectFieldType(xField))} />

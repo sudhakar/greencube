@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator'
 import { ReportProvider, useReports } from '@/context/ReportContext'
 import type { WidgetInstance } from '@/lib/types'
 import { BgGradient } from './components/BgGradient'
+import CyanLights from './components/CyanLights'
+import CyanLights2 from './components/CyanLights2'
 import { AppShell2 } from './components/rjsf'
 
 function AppShell() {
@@ -58,7 +60,9 @@ function AppShell() {
 export default function App() {
   return (
     <ReportProvider>
-      <BgGradient />
+      {/* <BgGradient /> */}
+      <CyanLights2 />
+      {/* <CyanLights /> */}
       <AppShell />
     </ReportProvider>
   )

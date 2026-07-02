@@ -23,7 +23,7 @@ import { Toggle } from '@/components/ui/toggle'
 import { CompactAddButton, CompactArrayFieldTemplate, CompactArrayFieldTitleTemplate, CompactArrayItemTemplate, CompactObjectFieldTemplate, FieldSelect, FlatFormatList, FormatSelect, MultiFieldSelect, PrefixSelect, TitleWidget, XsBaseInputTemplate } from '@/components/widget-config'
 import { useReports } from '@/context/ReportContext'
 import { useFetch } from '@/hooks/useFetch'
-import { fetchMeta } from '@/lib/api'
+import { cube } from '@/lib/cube/cube'
 import type { Query } from '@/lib/cube/types'
 import { fieldType } from '@/lib/meta'
 import { addWidget, updateWidget } from '@/lib/storage'
@@ -93,7 +93,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
 
   useEffect(() => {
     if (open && !meta) {
-      fetchMeta().then(setMeta).catch(() => { })
+      cube.meta().then(setMeta).catch(() => { })
     }
   }, [open, meta])
 

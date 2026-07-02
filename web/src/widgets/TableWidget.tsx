@@ -1,15 +1,15 @@
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+} from '@tanstack/react-table'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ReactNode, useMemo, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { fieldTitle, fieldType } from '@/lib/meta'
-import { useVirtualizer } from '@tanstack/react-virtual'
-import {
-  flexRender,
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  type SortingState,
-} from '@tanstack/react-table'
 import { formatValue } from './widget-theme'
 
 interface ColumnFormat {
@@ -87,12 +87,14 @@ export function TableWidget({ data, config }: TableWidgetProps) {
 
   return (
     <div className="flex h-full flex-col gap-2 overflow-hidden">
-      <Input
-        placeholder="Search..."
-        className="h-7 text-xs"
-        value={globalFilter}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-      />
+      <div className='p-2 px-3 pt-0 text-[8px]'>
+        <Input
+          placeholder="Search..."
+          className="h-6 text-[8px]"
+          value={globalFilter}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+        />
+      </div>
       <div ref={scrollRef} className="flex-1 overflow-auto">
         <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
           <div
