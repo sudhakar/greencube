@@ -1,4 +1,4 @@
-import { IconArrowDown, IconArrowUp, IconSelector } from '@tabler/icons-react'
+import { IconArrowDown, IconArrowUp, IconFilter2, IconSelector, IconSettings } from '@tabler/icons-react'
 import {
   flexRender,
   getCoreRowModel,
@@ -9,7 +9,9 @@ import {
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { type ReactNode, useMemo, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { fieldTitle, fieldType } from '@/lib/meta'
 import { formatValue } from './widget-theme'
 
@@ -39,6 +41,7 @@ export function TableWidget({ data, config }: TableWidgetProps) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const scrollRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const formatMap = useMemo(() => {
     const map: Record<string, { format: string; prefix?: string; precision?: number }> = {}
@@ -94,62 +97,77 @@ export function TableWidget({ data, config }: TableWidgetProps) {
   if (!data.length) return null
 
   return (
-    <div className="relative flex h-full flex-col gap-0 overflow-hidden" style={{ ['--table-header-height' as never]: '28px' }}>
-      <div className="flex gap-2 items-center justify-between pt-1 pb-3 px-3 text-[8px]">
-        <h4 className="flex-1 text-nowrap text-xs">Table tiltle</h4>
-        <Input
-          placeholder="Search..."
-          className="h-6 px-1.5 md:text-[12px] w-40"
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-        />
+    <div className="relative flex h-full flex-col gap-0 overflow-hidden" ref={containerRef}>
+      <div className="flex gap-2 items-center justify-between py-2 px-2 text-[8px]">
+        <h4 className="flex-1 text-nowrap text-xs font-medium">Table tiltle</h4>
+        <div className='flex items-center gap-1'>
+
+
+          <Sheet modal={false} disablePointerDismissal>
+            <SheetTrigger>
+              <Button variant="ghost" size="icon-xs"><IconSettings /></Button>
+            </SheetTrigger>
+            <SheetContent container={containerRef} hideOverlay style={{ position: 'absolute' }}>
+              <SheetHeader>
+                <SheetTitle>Are you absolutely sure?</SheetTitle>
+                <SheetDescription>This action cannot be undone.</SheetDescription>
+              </SheetHeader>
+            </SheetContent>
+          </Sheet>
+
+          <Input
+            placeholder="Search..."
+            className="h-6 px-2 md:text-[12px] w-40"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+          />
+        </div>
       </div>
 
       <div
-        className="bg-muted/40"
+        className="bg-border/60"
         style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}
       >
         {table.getHeaderGroups().flatMap((hg) => hg.headers).map((header) => (
           <div
             key={header.id}
-            className="cursor-pointer select-none flex items-center justify-between px-2 py-1 text-xs font-medium"
+            className="cursor-pointer select-none flex items-center gap-1 px-2 py-1 text-xs font-medium"
             onClick={header.column.getToggleSortingHandler()}
           >
             {String(header.column.columnDef.header ?? '')}
 
-            {CARET_MAP[header.column.getIsSorted() as ('asc' | 'desc') || 'none']}
+            <span className='opacity-40'>{CARET_MAP[header.column.getIsSorted() as ('asc' | 'desc') || 'none']}</span>
+            <IconFilter2 size={12} className='ml-auto opacity-20 hover:opacity-100' />
           </div>
         ))}
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-auto">
-        <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-          {virtualizer.getVirtualItems().map((vitem) => {
-            const row = rows[vitem.index]
-            return (
-              <div
-                key={row.id}
-                className="border-t"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: `${vitem.size}px`,
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))`,
-                  transform: `translateY(${vitem.start}px)`,
-                }}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <div key={cell.id} className="truncate px-2 py-1 text-xs">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext()) as ReactNode}
-                  </div>
-                ))}
-              </div>
-            )
-          })}
-        </div>
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }} ref={scrollRef} className="flex-1 overflow-auto">
+        {virtualizer.getVirtualItems().map((vitem) => {
+          const row = rows[vitem.index]
+          return (
+            <div
+              key={row.id}
+              className="border-b border-border/40 last:border-b-0 items-center max-content "
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: `${vitem.size}px`,
+                display: 'grid',
+                gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))`,
+                transform: `translateY(${vitem.start}px)`,
+              }}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <div key={cell.id} className="truncate px-2 py-1 text-xs">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext()) as ReactNode}
+                </div>
+              ))}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

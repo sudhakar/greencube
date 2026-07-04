@@ -31,9 +31,10 @@ export function WidgetFrame({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-4xl border drag-handle bg-cyan-900/10 backdrop-blur-xs" onDoubleClick={onEdit}>
+    <div className="flex h-full flex-col relative overflow-hidden rounded-md border bg-card drag-handle transform-gpu " onDoubleClick={onEdit}>
+      <div className="absolute inset-0 -z-10 bg-card backdrop-blur-xs transform-gpu will-change-transform"></div>
       <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
-        <ContextMenuTrigger className="justify-center rounded-md pt-2 text-muted-foreground">
+        <ContextMenuTrigger className="justify-center rounded-md text-muted-foreground">
           {title && (
             <div className="group flex cursor-move justify-between px-3 pt-1.5 pb-1.5">
               <span className="truncate text-sm font-medium">{title}</span>

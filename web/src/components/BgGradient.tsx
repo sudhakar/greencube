@@ -18,7 +18,7 @@ export function BgGradient({
   lineStroke = '#06b6d4AA',
 }: BgGradientProps = {}) {
   const cellSize = 90; // 1/4th smaller (was 120)
-  const rectSize = 44; // 1/4th smaller (was 59)
+  const rectSize = 45; // 1/4th smaller (was 59)
   const gap = 1;
   const halfSize = width / 2;
 
@@ -134,8 +134,8 @@ export function BgGradient({
             />
 
             {/* Gap lines (1px borders) */}
-            <line x1={rectSize + gap} y1="0" x2={rectSize + gap} y2={cellSize} stroke={lineStroke} strokeWidth="1" opacity="0.4" />
-            <line x1="0" y1={rectSize + gap} x2={cellSize} y2={rectSize + gap} stroke={lineStroke} strokeWidth="1" opacity="0.4" />
+            <line x1={rectSize + gap} y1="0" x2={rectSize + gap} y2={cellSize} stroke={lineStroke} strokeWidth="1" opacity="0.3" />
+            <line x1="0" y1={rectSize + gap} x2={cellSize} y2={rectSize + gap} stroke={lineStroke} strokeWidth="1" opacity="0.3" />
           </pattern>
         </defs>
 

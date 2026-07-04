@@ -60,7 +60,7 @@ function AppShell() {
 export default function App() {
   return (
     <ReportProvider>
-      {/* <BgGradient /> */}
+      <BgGradient />
       <CyanLights2 />
       {/* <CyanLights /> */}
       <AppShell />
