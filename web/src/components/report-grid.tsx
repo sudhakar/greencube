@@ -25,7 +25,6 @@ function WidgetRenderer({ widget, onEdit, onClone, onDelete }: WidgetRendererPro
 
   return (
     <WidgetFrame
-      title={widget.title}
       loading={isLoading}
       error={error}
       hasData={hasData}

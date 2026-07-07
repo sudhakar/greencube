@@ -166,20 +166,24 @@ export function TitleWidget({ value, onChange }: { value?: string; onChange: (v:
         Title
       </InputGroupAddon>
       <InputGroupInput value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
-      <InputGroupAddon align="inline-end" className="p-0 text-muted-foreground text-xs">
-        <ToggleGroup variant="outline" size="sm" spacing={0}>
-          <ToggleGroupItem value="bold" aria-label="Toggle bold">
-            <AlignLeft />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="italic" aria-label="Toggle italic">
-            <AlignCenter />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="strikethrough" aria-label="Toggle strikethrough">
-            <AlignRight />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </InputGroupAddon>
     </InputGroup>
+  )
+}
+
+export function AlignWidget({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
+  const align = value ?? 'center'
+  return (
+    <ToggleGroup variant="outline" size="sm" spacing={0} value={[align]} onValueChange={(v) => { if (v.length) onChange(v[0]) }}>
+      <ToggleGroupItem value="left" aria-label="Align left">
+        <AlignLeft />
+      </ToggleGroupItem>
+      <ToggleGroupItem value="center" aria-label="Align center">
+        <AlignCenter />
+      </ToggleGroupItem>
+      <ToggleGroupItem value="right" aria-label="Align right">
+        <AlignRight />
+      </ToggleGroupItem>
+    </ToggleGroup>
   )
 }
 

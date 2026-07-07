@@ -10,7 +10,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -25,8 +25,9 @@ interface ColumnFormat {
   precision?: number
 }
 
-interface TableConfig {
+export interface TableConfig {
   columnFormats?: ColumnFormat[]
+  title?: { text: string; align?: 'left' | 'center' | 'right' }
 }
 
 interface TableWidgetProps {
@@ -162,7 +163,7 @@ function VirtualRowsContainer({
   })
 
   /* Force re-measure after mount when layout is settled */
-  useEffect(() => { rowVirt.measure() })
+  useEffect(() => { rowVirt.measure() }, [rowVirt])
 
   /* Timing */
   const renderStart = useRef(0)
@@ -301,12 +302,7 @@ export function TableWidget({ data, config }: TableWidgetProps) {
     [allColIds, colWidths],
   )
 
-  const rows = useMemo(() => {
-    const t0 = performance.now()
-    const r = table.getRowModel().rows.map(r => r.original)
-    console.log('[perf] rows computed in', (performance.now() - t0).toFixed(1), 'ms')
-    return r
-  }, [table])
+  const rows = table.getRowModel().rows.map(r => r.original)
 
   /* Pin toggle uses column IDs, not column objects */
   const handlePinToggle = (colId: string) => {
@@ -335,10 +331,23 @@ export function TableWidget({ data, config }: TableWidgetProps) {
 
   /* ── Render ── */
   if (!data.length) return null
+  const titleText = config?.title?.text
+  const titleAlign = config?.title?.align ?? 'center'
+  const style: CSSProperties = titleAlign === 'left'
+    ? { order: 0 }
+    : titleAlign === 'right'
+      ? { order: 2, textAlign: 'right' }
+      : { order: 1, margin: '0 auto', textAlign: 'center' }
 
   return (
     <div className="flex flex-col absolute inset-0" ref={containerRef}>
-      <div className="flex gap-2 items-center py-2 px-2">
+
+      <div className="flex gap-2 items-center py-2 px-4">
+        {titleText && (
+          <div className="drag-handle shrink-0" style={{ ...style, flex: 1 }}>
+            <span className="truncate text-xs font-medium">{titleText}</span>
+          </div>
+        )}
         <Input
           placeholder="Search..."
           className="h-6 px-2 md:text-[12px] w-40"

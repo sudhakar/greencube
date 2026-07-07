@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { InputGroup, InputGroupButton, InputGroupTextarea } from '@/components/ui/input-group'
 import { Toggle } from '@/components/ui/toggle'
-import { CompactAddButton, CompactArrayFieldTemplate, CompactArrayFieldTitleTemplate, CompactArrayItemTemplate, CompactObjectFieldTemplate, FieldSelect, FlatFormatList, FormatSelect, MultiFieldSelect, PrefixSelect, TitleWidget, XsBaseInputTemplate } from '@/components/widget-config'
+import { AlignWidget, CompactAddButton, CompactArrayFieldTemplate, CompactArrayFieldTitleTemplate, CompactArrayItemTemplate, CompactObjectFieldTemplate, FieldSelect, FlatFormatList, FormatSelect, MultiFieldSelect, PrefixSelect, TitleWidget, XsBaseInputTemplate } from '@/components/widget-config'
 import { useReports } from '@/context/ReportContext'
 import { useFetch } from '@/hooks/useFetch'
 import { cube } from '@/lib/cube/cube'
@@ -86,7 +86,9 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
     if (editingWidget && open) {
       setWidgetType(editingWidget.type)
       setQueryText(JSON.stringify(editingWidget.query, null, 2))
-      setConfig({ title: editingWidget.title, ...editingWidget.config as Record<string, unknown> })
+      const existingConfig = editingWidget.config as Record<string, unknown>
+      const titleObj = existingConfig.title as { text?: string; align?: string } | undefined
+      setConfig({ ...existingConfig, title: titleObj?.text ?? editingWidget.title, titleAlign: titleObj?.align ?? 'center' })
       setCommittedQuery({ ...editingWidget.query, limit: 100 })
     }
   }, [editingWidget, open])
@@ -153,16 +155,15 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
       const timeDims: string[] = (q.timeDimensions ?? []).map((td: { dimension: string }) => td.dimension)
       const firstMeasure = measures[0] ?? ''
       const firstDim = dimensions[0] ?? timeDims[0] ?? ''
-
       switch (widgetType) {
         case 'bar':
         case 'line':
         case 'area':
-          return { title: 'Widget Title', xField: firstDim, yFields: measures }
+          return { title: 'Widget Title', titleAlign: 'center', xField: firstDim, yFields: measures }
         case 'pie':
-          return { title: 'Widget Title', labelField: firstDim, valueField: firstMeasure }
+          return { title: 'Widget Title', titleAlign: 'center', labelField: firstDim, valueField: firstMeasure }
         case 'number':
-          return { title: 'Widget Title', valueField: firstMeasure }
+          return { title: 'Widget Title', titleAlign: 'center', valueField: firstMeasure }
         case 'table': {
           const allFields = [...measures, ...dimensions, ...timeDims]
           const numericTimeFields = allFields.filter((f) => {
@@ -172,6 +173,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
           })
           return {
             title: 'Widget Title',
+            titleAlign: 'center',
             columnFormats: numericTimeFields.map((f) => ({
               field: f,
               prefix: '',
@@ -269,18 +271,20 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
   const handleFinish = () => {
     if (!widgetType || !activeId) return
     const query = JSON.parse(queryText)
-    const { title: rawTitle, ...configRest } = config
-    const widgetTitle = ((rawTitle as string) ?? '').trim()
+    const widgetTitle = ((config.title as string) ?? '').trim()
+    const titleAlign = (config.titleAlign as string) ?? 'center'
+    const mergedConfig = { ...config, title: { text: widgetTitle, align: titleAlign } }
+    delete (mergedConfig as Record<string, unknown>).titleAlign
 
     if (isEditing && editingWidget) {
       updateWidget(activeId, editingWidget.id, {
         title: widgetTitle,
         type: widgetType,
         query,
-        config: configRest,
+        config: mergedConfig,
       })
     } else {
-      addWidget(activeId, widgetType, widgetTitle, query, configRest, { x: 0, y: 0, w: 24, h: 16 })
+      addWidget(activeId, widgetType, widgetTitle, query, mergedConfig, { x: 0, y: 0, w: 24, h: 16 })
     }
     refresh()
     handleClose(false)
@@ -317,6 +321,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
     if (!schema?.properties) return {}
     const ui: Record<string, unknown> = {
       title: { 'ui:widget': 'titleWidget', 'ui:options': { label: false } },
+      titleAlign: { 'ui:widget': 'alignWidget', 'ui:options': { label: false } },
     }
     for (const key of Object.keys(schema.properties)) {
       if (singleAxis.has(key)) {
@@ -567,9 +572,6 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                     style={{ background: "linear-gradient(90deg, #18181b 1px, transparent 1px) 0 0 / 5px 5px,   linear-gradient(#18181b 1px, transparent 1px) 0 0 / 5px 5px,   hsl(240 6% 4% / 1)" }}
                   >
                     <div className="flex h-full flex-col overflow-hidden rounded-sm bg-card">
-                      <div className="px-3 pt-1.5 pb-1.5">
-                        <span className="truncate text-sm font-medium">{((config.title as string) ?? '').trim() || 'Widget Title'}</span>
-                      </div>
                       <div className="flex-1 overflow-auto p-0 relative">
                         {widgetType === 'number' && <NumberWidget data={previewData} config={config as never} />}
                         {widgetType === 'bar' && <BarWidget data={previewData} config={config as never} />}
@@ -596,7 +598,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                       uiSchema={uiSchema}
                       formContext={config}
                       fields={{ flatFormatList: FlatFormatList as never }}
-                      widgets={{ fieldSelect: FieldSelect, multiFieldSelect: MultiFieldSelect, formatSelect: FormatSelect, prefixSelect: PrefixSelect, titleWidget: TitleWidget }}
+                      widgets={{ fieldSelect: FieldSelect, multiFieldSelect: MultiFieldSelect, formatSelect: FormatSelect, prefixSelect: PrefixSelect, titleWidget: TitleWidget, alignWidget: AlignWidget }}
                       templates={{ ArrayFieldTemplate: CompactArrayFieldTemplate, ArrayFieldItemTemplate: CompactArrayItemTemplate, ArrayFieldTitleTemplate: CompactArrayFieldTitleTemplate, ObjectFieldTemplate: CompactObjectFieldTemplate as never, BaseInputTemplate: XsBaseInputTemplate, ButtonTemplates: { AddButton: CompactAddButton } }}
                       onChange={(e) => setConfig(e.formData)}
                       className="widget-config-xs"

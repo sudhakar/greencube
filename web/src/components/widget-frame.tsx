@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from './ui/context-menu'
 
 interface WidgetFrameProps {
-  title: string
   loading?: boolean
   error?: string | null
   hasData?: boolean
@@ -18,7 +17,6 @@ interface WidgetFrameProps {
 }
 
 export function WidgetFrame({
-  title,
   loading,
   error,
   hasData,
@@ -31,14 +29,30 @@ export function WidgetFrame({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="absolute inset-0 overflow-hidden rounded-md border drag-handle transform-gpu " onDoubleClick={onEdit}>
-      <div className="absolute inset-0 -z-10 bg-card/20 backdrop-blur-xs transform-gpu will-change-transform"></div>
+    <div className="absolute inset-0 overflow-hidden rounded-md border transform-gpu " onDoubleClick={onEdit}>
+      <div className="absolute inset-0 -z-10 bg-card/10 backdrop-blur-xs transform-gpu will-change-transform"></div>
       <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
-        <ContextMenuTrigger className="justify-center rounded-md text-muted-foreground">
-          {title && (
-            <div className="group flex cursor-move justify-between px-3 pt-1.5 pb-1.5">
-              <span className="truncate text-sm font-medium">{title}</span>
+        <ContextMenuTrigger className="flex h-full w-full flex-col rounded-md">
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
+          ) : error ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <span>{error}</span>
+              {onRetry && (
+                <Button variant="outline" size="sm" onClick={onRetry}>
+                  <RefreshCw className="mr-1 h-3 w-3" /> Retry
+                </Button>
+              )}
+            </div>
+          ) : hasData === false ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+              No data
+            </div>
+          ) : (
+            <div className="flex flex-1 flex-col min-h-0">{children}</div>
           )}
         </ContextMenuTrigger>
         <ContextMenuContent align="end" className="w-28">
@@ -49,30 +63,6 @@ export function WidgetFrame({
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-
-      <>
-        {loading ? (
-          <div className="flex h-full items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : error ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <AlertCircle className="h-5 w-5 text-destructive" />
-            <span>{error}</span>
-            {onRetry && (
-              <Button variant="outline" size="sm" onClick={onRetry}>
-                <RefreshCw className="mr-1 h-3 w-3" /> Retry
-              </Button>
-            )}
-          </div>
-        ) : hasData === false ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            No data
-          </div>
-        ) : (
-          children
-        )}
-      </>
     </div>
   )
 }

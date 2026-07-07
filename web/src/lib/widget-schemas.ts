@@ -7,6 +7,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     required: ['valueField'],
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
+      titleAlign: { type: 'string', title: 'Align', default: 'center', enum: ['left', 'center', 'right'] },
       valueField: { type: 'string', title: 'Value Field' },
       valueFormat: { type: 'string', title: 'Value Format', default: 'auto' },
       trendField: { type: 'string', title: 'Trend Field' },
@@ -20,6 +21,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     required: ['xField', 'yFields'],
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
+      titleAlign: { type: 'string', title: 'Align', default: 'center', enum: ['left', 'center', 'right'] },
       xField: { type: 'string', title: 'X-Axis Field' },
       xFormat: { type: 'string', title: 'X-Axis Format', default: 'auto' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
@@ -33,6 +35,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     required: ['xField', 'yFields'],
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
+      titleAlign: { type: 'string', title: 'Align', default: 'center', enum: ['left', 'center', 'right'] },
       xField: { type: 'string', title: 'X-Axis Field' },
       xFormat: { type: 'string', title: 'X-Axis Format', default: 'auto' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
@@ -45,6 +48,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     required: ['xField', 'yFields'],
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
+      titleAlign: { type: 'string', title: 'Align', default: 'center', enum: ['left', 'center', 'right'] },
       xField: { type: 'string', title: 'X-Axis Field' },
       xFormat: { type: 'string', title: 'X-Axis Format', default: 'auto' },
       yFields: { type: 'array', title: 'Y-Axis Fields', items: { type: 'string' } },
@@ -58,6 +62,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     required: ['labelField', 'valueField'],
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
+      titleAlign: { type: 'string', title: 'Align', default: 'center', enum: ['left', 'center', 'right'] },
       labelField: { type: 'string', title: 'Label Field' },
       valueField: { type: 'string', title: 'Value Field' },
       valueFormat: { type: 'string', title: 'Value Format', default: 'auto' },
@@ -68,6 +73,7 @@ export const WIDGET_SCHEMAS: Record<WidgetType, JSONSchema7> = {
     type: 'object',
     properties: {
       title: { type: 'string', title: 'Title', default: 'Widget Title' },
+      titleAlign: { type: 'string', title: 'Align', default: 'center', enum: ['left', 'center', 'right'] },
       columnFormats: {
         type: 'array',
         title: 'Format Column',
