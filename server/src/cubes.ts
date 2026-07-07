@@ -43,7 +43,7 @@ export const employeesCube = defineCube('Employees', {
   ],
   dimensions: {
     id: { sql: 'e.id', type: 'number' },
-    name: { sql: 'e.name', type: 'string' },
+    name: { sql: 'e.name', type: 'string', title: 'Name' },
     email: { sql: 'e.email', type: 'string' },
     isActive: { sql: 'e.active', type: 'boolean' },
     sex: { sql: 'e.sex', type: 'string' },
@@ -52,7 +52,7 @@ export const employeesCube = defineCube('Employees', {
     departmentId: { sql: 'e.department_id', type: 'number' },
     officeId: { sql: 'e.office_id', type: 'number' },
     managerId: { sql: 'e.manager_id', type: 'number' },
-    age: { sql: "DATEDIFF('year', e.birth_date, CURRENT_DATE)", type: 'number' },
+    age: { sql: "DATEDIFF('year', e.birth_date, CURRENT_DATE)", type: 'number', title: 'Age' },
     city: { sql: 'e.city', type: 'string' },
     region: { sql: 'e.region', type: 'string' },
     country: { sql: 'e.country', type: 'string' },
