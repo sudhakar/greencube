@@ -50,8 +50,8 @@ const CELL_CLASSES = [
 ].join(' ')
 const PINNED_CLASSES = CELL_CLASSES + ' sticky z-[1] bg-muted'
 
-const BODY_CELL_CLASSES = CELL_CLASSES + ' border-t'
-const BODY_PINNED_CLASSES = PINNED_CLASSES + ' border-t'
+const BODY_CELL_CLASSES = CELL_CLASSES + ' border-b'
+const BODY_PINNED_CLASSES = PINNED_CLASSES + ' border-b'
 const LAST_BODY_CELL_CLASSES = CELL_CLASSES
 const LAST_BODY_PINNED_CLASSES = PINNED_CLASSES
 
@@ -201,7 +201,7 @@ function VirtualRowsContainer({
               fieldTypes={fieldTypes}
               totalWidth={totalWidth}
               rowHeight={vitem.size}
-              isLastRow={false}
+              isLastRow={vitems.at(-1) === vitem}
             />
           </div>
         )
@@ -361,7 +361,7 @@ export function TableWidget({ data, config }: TableWidgetProps) {
       <div ref={scrollRef} className="isolate flex-1 overflow-auto" style={{ cursor: resizingCol ? 'col-resize' : undefined }}>
         <div style={{ width: totalWidth, minWidth: '100%' }}>
           {/* ── Header ── */}
-          <div className="sticky top-0 z-10 bg-border backdrop-blur-xl whitespace-nowrap">
+          <div className="sticky top-0 z-10 bg-border/60 backdrop-blur-xl whitespace-nowrap">
             {[...pinnedIds, ...centerIds].map((id) => {
               const col = table.getAllLeafColumns().find(c => c.id === id)!
               const h = table.getHeaderGroups()[0].headers.find(h => h.column.id === id)
@@ -370,7 +370,7 @@ export function TableWidget({ data, config }: TableWidgetProps) {
                 <div
                   key={id}
                   className={cn(
-                    'inline-flex items-center gap-0.5 px-1 py-1 text-xs font-medium select-none truncate shrink-0 box-border border-r last:border-r-0 cursor-pointer align-top',
+                    'inline-flex items-center gap-0.5 px-1 py-[3px] text-xs font-medium select-none truncate shrink-0 box-border border-r border-t border-b last:border-r-0 cursor-pointer align-top',
                     isPinned ? 'sticky bg-muted' : 'relative',
                   )}
                   style={{
