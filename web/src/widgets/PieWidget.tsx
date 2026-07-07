@@ -1,4 +1,4 @@
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
+import { Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { chartColors, formatValue, legendFormatter, tooltipProps } from './widget-theme'
 
 export interface PieConfig {
@@ -43,6 +43,7 @@ export function PieWidget({ data, config }: PieWidgetProps) {
               cx="50%" cy="50%"
               innerRadius={config.donut ? 40 : 0}
               outerRadius={80}
+              stroke='var(--muted)'
               label={config.showPercent ? ({ value }) => `${((value as number) / chartData.reduce((a, b) => a + (b[valueField] as number), 0) * 100).toFixed(0)}%` : undefined}
             >
               {chartData.map((_, i) => (
