@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react'
-import type { ComponentProps, ComponentType, MouseEventHandler, ReactNode, ReactElement } from 'react'
+import type { ComponentProps, ComponentType, MouseEventHandler, ReactElement, ReactNode } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
@@ -33,7 +33,7 @@ export const MultiFieldSelect: ComponentType<any> = ({ value = [], onChange, opt
         const checked = value.includes(f)
         return (
           <label key={f} className="flex items-center gap-1.5 cursor-pointer py-0.5 px-1 text-xs hover:bg-muted/50 rounded-sm">
-            <Checkbox size="xs" checked={checked} onCheckedChange={() => {
+            <Checkbox checked={checked} onCheckedChange={() => {
               if (checked) onChange(value.filter((v: string) => v !== f))
               else onChange([...value, f])
             }} />

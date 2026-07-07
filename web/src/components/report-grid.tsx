@@ -39,7 +39,7 @@ function WidgetRenderer({ widget, onEdit, onClone, onDelete }: WidgetRendererPro
       {widget.type === 'line' && <LineWidget data={data} config={widget.config as never} />}
       {widget.type === 'area' && <AreaWidget data={data} config={widget.config as never} />}
       {widget.type === 'pie' && <PieWidget data={data} config={widget.config as never} />}
-      {widget.type === 'table' && <TableWidget data={data} />}
+      {widget.type === 'table' && <TableWidget data={data} config={widget.config as never} />}
     </WidgetFrame>
   )
 }
@@ -82,8 +82,9 @@ export function ReportGrid({ onEditWidget }: ReportGridProps) {
           onDragStop={(layout) => saveLayout(layout)}
           onResizeStop={(layout) => saveLayout(layout)}
           autoSize={true}
-          dragConfig={{ handle: '.drag-handle' }}
-          resizeConfig={{ handles: ['e', 'w', 's', 'n', 'se', 'sw', 'ne', 'nw'], }}
+          dragConfig={{ handle: '.drag-handle', enabled: true }}
+          resizeConfig={{ handles: ['e', 'w', 's', 'n', 'se', 'sw', 'ne', 'nw'], enabled: true }}
+
           gridConfig={{
             cols: 40,
             rowHeight: 12,
@@ -93,7 +94,7 @@ export function ReportGrid({ onEditWidget }: ReportGridProps) {
           style={{ color: 'inherit' }}
         >
           {report.widgets.map((w) => (
-            <div key={w.id}>
+            <div key={w.id} data-key={w.id}>
               <WidgetRenderer
                 widget={w}
                 onEdit={onEditWidget ? () => onEditWidget(w) : undefined}

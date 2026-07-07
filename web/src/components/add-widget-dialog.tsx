@@ -436,8 +436,8 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                               >
                                 <td className="w-4 px-1 pt-0.5 bg-muted">
                                   <Checkbox
-                                    size="xs"
-                                    checked={cs === 'all' ? true : cs === 'some' ? 'indeterminate' : false}
+                                    checked={cs === 'all'}
+                                    indeterminate={cs === 'some'}
                                     onClick={(e) => e.stopPropagation()}
                                     onCheckedChange={() => toggleCube(cube.name)}
                                   />
@@ -475,7 +475,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                                       return (
                                         <tr key={f.name} className="cursor-pointer border-t border-muted hover:bg-muted/20" onClick={() => toggleField(f.name)}>
                                           <td className="w-4 px-1 pt-0.5">
-                                            <Checkbox size="xs" checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
+                                            <Checkbox checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
                                           </td>
                                           <td className="px-0 py-1 text-[10px]">
                                             <CatIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />
@@ -498,7 +498,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                                       return (
                                         <tr key={f.name} className="cursor-pointer border-t border-muted hover:bg-muted/20" onClick={() => toggleField(f.name)}>
                                           <td className="w-4 px-1 pt-0.5">
-                                            <Checkbox size="xs" checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
+                                            <Checkbox checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
                                           </td>
                                           <td className="px-0 py-1 text-[10px]">
                                             <CatIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />
@@ -521,7 +521,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
                                       return (
                                         <tr key={f.name} className="cursor-pointer border-t border-muted hover:bg-muted/20" onClick={() => toggleField(f.name)}>
                                           <td className="w-4 px-1 pt-0.5">
-                                            <Checkbox size="xs" checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
+                                            <Checkbox checked={isFieldSelected(f.name)} onClick={(e) => e.stopPropagation()} onCheckedChange={() => toggleField(f.name)} />
                                           </td>
                                           <td className="px-0 py-1 text-[10px]">
                                             <CatIcon className="mr-1 inline size-3 align-text-bottom text-muted-foreground" />

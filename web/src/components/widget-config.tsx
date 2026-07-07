@@ -35,7 +35,7 @@ export const MultiFieldSelect: ComponentType<any> = ({ value = [], onChange, opt
         const checked = value.includes(f)
         return (
           <label key={f} className="flex items-center gap-1.5 cursor-pointer py-0.5 px-1 text-xs hover:bg-muted/50 rounded-sm">
-            <Checkbox size="xs" checked={checked} onCheckedChange={() => {
+            <Checkbox checked={checked} onCheckedChange={() => {
               if (checked) onChange(value.filter((v: string) => v !== f))
               else onChange([...value, f])
             }} />

@@ -17,20 +17,20 @@
 }
 
 .react-grid-item > .react-resizable-handle.react-resizable-handle-e {
-  left: calc(100% - 2px); width: 6px;
-  top: 6px; bottom: 6px; height: auto; margin: 0; cursor: col-resize; transform: none;
+  left: calc(100% - 5px); width: 9px;
+  top: 25px; bottom: 25px; height: auto; margin: 0; cursor: col-resize; transform: none;
 }
 .react-grid-item > .react-resizable-handle.react-resizable-handle-w {
-  left: calc(0% - 4px); width: 6px;
-  top: 6px; bottom: 6px; height: auto; margin: 0; cursor: col-resize; transform: none;
+  left: calc(0% - 4px); width: 9px;
+  top: 25px; bottom: 25px; height: auto; margin: 0; cursor: col-resize; transform: none;
 }
 .react-grid-item > .react-resizable-handle.react-resizable-handle-s {
-  top: calc(100% - 2px); height: 6px;
-  left: 6px; right: 6px; width: auto; margin: 0; cursor: row-resize; transform: none;
+  top: calc(100% - 5px); height: 9px;
+  left: 25px; right: 25px; width: auto; margin: 0; cursor: row-resize; transform: none;
 }
 .react-grid-item > .react-resizable-handle.react-resizable-handle-n {
-  top: calc(0% - 4px); height: 6px;
-  left: 6px; right: 6px; width: auto; margin: 0; cursor: row-resize; transform: none;
+  top: calc(0% - 4px); height: 9px;
+  left: 25px; right: 25px; width: auto; margin: 0; cursor: row-resize; transform: none;
 }
 
 /* Hide default corner bracket */
@@ -144,22 +144,10 @@ body {
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
-  /* Card bg alternatives for light mode (current: 0.985 0 0):
-     oklch(0.99 0 0)       — near-white, neutral
-     oklch(0.985 0 0)      — very light neutral gray  ★ (current)
-     oklch(0.98 0 0)       — light neutral gray
-     oklch(0.975 0 0)      — subtle neutral gray
-     oklch(0.99 0.005 250) — barely-there cool blue
-     oklch(0.99 0.005 80)  — barely-there warm
-     oklch(0.985 0.008 200) — subtle cool tint
-     oklch(0.985 0.008 40)  — subtle warm tint
-     oklch(0.982 0.004 180) — muted teal hint
-     oklch(0.982 0.004 60)  — muted golden hint
-     oklch(0.978 0.006 240) — lightest slate  ★ (current)
-     oklch(0.978 0.006 30)  — lightest warm stone
-  */
-  --card: oklch(1 0 0);
+ 
+  --card: oklch(0.99 0.005 250);
   --card-foreground: oklch(0.141 0.005 285.823);
+  --w-card: oklch(0.99 0.005 250 / 0.1);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
   --primary: oklch(0.488 0.243 264.376);
@@ -205,10 +193,13 @@ body {
 .dark {
   --background:         oklch(0.141 0.015 206); 
   --foreground:         oklch(0.850 0.015 206); 
-  --card:                 oklch(0.40 0.020 206 / 10%);
-  --card-foreground:      oklch(0.985 0.005 206);
+  --card:               oklch(0.20 0.015 206);
+  --card-foreground:    oklch(0.985 0.005 206);
+  --w-card:             oklch(0.20 0.015 206 / 0.1);
   --popover:            oklch(0.210 0.015 206); 
   --popover-foreground: oklch(0.985 0 0);
+
+  --w-card:                 oklch(0.20 0.015 206 / 10%);
 
   --primary:              oklch(0.60 0.160 206 / 75%);
   --primary-foreground:   oklch(0.98 0.010 206);

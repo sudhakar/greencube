@@ -31,8 +31,8 @@ export function WidgetFrame({
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-full flex-col relative overflow-hidden rounded-md border bg-card drag-handle transform-gpu " onDoubleClick={onEdit}>
-      <div className="absolute inset-0 -z-10 bg-card backdrop-blur-xs transform-gpu will-change-transform"></div>
+    <div className="absolute inset-0 overflow-hidden rounded-md border drag-handle transform-gpu " onDoubleClick={onEdit}>
+      <div className="absolute inset-0 -z-10 bg-card/20 backdrop-blur-xs transform-gpu will-change-transform"></div>
       <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <ContextMenuTrigger className="justify-center rounded-md text-muted-foreground">
           {title && (
@@ -50,7 +50,7 @@ export function WidgetFrame({
         </ContextMenuContent>
       </ContextMenu>
 
-      <div className="flex-1 overflow-auto p-0">
+      <>
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -72,7 +72,7 @@ export function WidgetFrame({
         ) : (
           children
         )}
-      </div>
+      </>
     </div>
   )
 }
