@@ -64,6 +64,11 @@ export class Cube {
 		return this.query(q);
 	}
 
+	refresh(cubeName: string) {
+		this.colStore.invalidateCube(cubeName);
+		this.rowStore.invalidate(cubeName);
+	}
+
 	async explain(q: Query): Promise<{ sql: string }> {
 		return this.fetch<{ sql: string }>("/explain", q);
 	}

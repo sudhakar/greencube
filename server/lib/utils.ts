@@ -1,4 +1,3 @@
-import type { Connection, Binds } from 'snowflake-sdk'
 import type { Cube } from './GreenCube.ts'
 
 // =============================================================================
@@ -44,32 +43,10 @@ export function formatMeta(
 }
 
 // =============================================================================
-// exec — execute SQL via a Snowflake connection
-// =============================================================================
-
-export function exec(
-  conn: Connection | null,
-  sql: string,
-  binds: Binds | undefined,
-): Promise<Record<string, unknown>[]> {
-  if (!conn) return Promise.reject(new Error('No database connected'))
-  return new Promise((resolve, reject) => {
-    conn.execute({
-      sqlText: sql,
-      binds,
-      complete: (err, _stmt, rows) => {
-        if (err) reject(err)
-        else resolve(rows as Record<string, unknown>[])
-      },
-    })
-  })
-}
-
-// =============================================================================
 // Explain tree helpers
 // =============================================================================
 
-export interface ExplainNode {
+interface ExplainNode {
   id: string
   operation: string
   target: string
@@ -189,36 +166,4 @@ export function levenshtein(a: string, b: string): number {
   return m[bl]
 }
 
-// =============================================================================
-// Tokenize and score for NL matching
-// =============================================================================
 
-export function tokenize(text: string): string[] {
-  if (!text) return []
-  const camelSplit = text.replace(/([a-z])([A-Z])/g, '$1 $2')
-  return camelSplit.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
-}
-
-export function scoreTokens(queryTokens: string[], targetTokens: string[]): { score: number; matched: boolean } {
-  let score = 0
-  let matched = false
-  for (const qt of queryTokens) {
-    for (const tt of targetTokens) {
-      if (tt.includes(qt) && qt.length >= 3) {
-        score += 3
-        matched = true
-      } else if (levenshtein(qt, tt) <= 2) {
-        score += 1
-        matched = true
-      }
-    }
-  }
-  return { score, matched }
-}
-
-/** Strip table alias prefix from a dimension SQL expression.
- *  'e.name' → 'name', 'd.id' → 'id'.
- *  Computed expressions (non-matching) are returned as-is. */
-export function fieldToColumn(sql: string): string {
-  return sql.replace(/^\w+\./, '')
-}

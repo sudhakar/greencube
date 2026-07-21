@@ -1,7 +1,6 @@
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { RowStore, Mutator } from "../row-store.ts";
-import type { Fetcher } from "../fetcher.ts";
+import { RowStore } from "../row-store.ts";
 
 describe("RowStore", () => {
 	let store: RowStore;
@@ -216,49 +215,3 @@ describe("RowStore query-level methods", () => {
 	});
 });
 
-describe("Mutator", () => {
-	let calls: { path: string; body?: object }[];
-	let mutator: Mutator;
-
-	beforeEach(() => {
-		calls = [];
-		const fetch = ((path: string, body?: object) => {
-			calls.push({ path, body });
-			return Promise.resolve({
-				data: [{ id: 1, name: "result" }],
-			});
-		}) as Fetcher;
-		mutator = new Mutator(fetch);
-	});
-
-	it("create sends POST /mutate", async () => {
-		const result = await mutator.create("Customers", { name: "New" });
-		assert.equal(calls.length, 1);
-		assert.equal(calls[0].path, "/mutate");
-		assert.deepEqual(calls[0].body, {
-			cube: "Customers",
-			operation: "create",
-			values: { name: "New" },
-		});
-		assert.deepEqual(result, { data: [{ id: 1, name: "result" }] });
-	});
-
-	it("update sends operation and filters", async () => {
-		await mutator.update("Customers", { country: "CA" }, [
-			{ member: "name", operator: "equals", values: ["Alice"] },
-		]);
-		assert.deepEqual(calls[0].body, {
-			cube: "Customers",
-			operation: "update",
-			values: { country: "CA" },
-			filters: [{ member: "name", operator: "equals", values: ["Alice"] }],
-		});
-	});
-
-	it("delete sends operation and filters", async () => {
-		await mutator.delete("Customers", [
-			{ member: "name", operator: "equals", values: ["Grace"] },
-		]);
-		assert.equal((calls[0].body as any).operation, "delete");
-	});
-});

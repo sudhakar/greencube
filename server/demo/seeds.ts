@@ -13,7 +13,7 @@
  *   employee_skills: 1500
  */
 
-import type { DatabaseSync } from 'node:sqlite'
+import type Database from 'better-sqlite3'
 
 const DEPARTMENTS = [
   ['Engineering',  1_200_000],
@@ -160,7 +160,7 @@ function randomDate(startY: number, endY: number): string {
   return dateStr(y, m, d)
 }
 
-export function seed(db: DatabaseSync): void {
+export function seed(db: Database.Database): void {
   db.exec("ATTACH DATABASE ':memory:' AS analytics")
 
   // ── Create tables ────────────────────────────────────────────────────────

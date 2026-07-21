@@ -62,11 +62,6 @@ function setQuery(v) {
   try { ed.value = JSON.stringify(JSON.parse(v), null, 2) } catch (e) { ed.value = v }
 }
 
-function setMutation(v) {
-  var ed = document.getElementById('mutation-editor')
-  try { ed.value = JSON.stringify(JSON.parse(v), null, 2) } catch (e) { ed.value = v }
-}
-
 function postJSON(url, body, token) {
   var headers = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = 'Bearer ' + token
@@ -90,22 +85,6 @@ function renderTable(rows, container) {
   container.innerHTML = h
 }
 
-function getToken() {
-  return document.getElementById('auth-token').value.trim() || null
-}
-
-// ── Auth helpers ──
-
-function b64(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/=+$/, '') }
-
-function makeToken(role) {
-  return b64({alg:'none',typ:'JWT'}) + '.' + b64({role:role}) + '.'
-}
-
-function setAuthRole(role) {
-  document.getElementById('auth-token').value = makeToken(role)
-}
-
 // ── Query tab ──
 
 document.getElementById('query-btn').addEventListener('click', function () {
@@ -114,15 +93,14 @@ document.getElementById('query-btn').addEventListener('click', function () {
   document.getElementById('query-results').innerHTML = '<div class="placeholder">Querying...</div>'
   document.getElementById('query-sql').querySelector('pre').textContent = 'Compiling...'
   document.getElementById('query-explain-content').innerHTML = '<div class="placeholder">Explaining...</div>'
-  var token = getToken()
-  postJSON('query', q, token).then(function (b) {
+  postJSON('query', q).then(function (b) {
     var el = document.getElementById('query-results')
     if (b.error) { el.innerHTML = '<div class="error">' + esc(b.error) + '</div>'; return }
     renderTable(b.data, el)
   }).catch(function (e) {
     document.getElementById('query-results').innerHTML = '<div class="error">' + esc(e.message) + '</div>'
   })
-  postJSON('explain', q, token).then(function (b) {
+  postJSON('explain', q).then(function (b) {
     var el = document.getElementById('query-sql')
     if (b.data && b.data.sql) {
       var sql = b.data.sql.trim()
@@ -152,36 +130,6 @@ document.getElementById('query-sample-select').addEventListener('change', functi
   switchTab('query');
 });
 
-// ── Mutate tab ──
-
-document.getElementById('mutate-btn').addEventListener('click', function () {
-  var ed = document.getElementById('mutation-editor'), m
-  try { m = JSON.parse(ed.value) } catch (e) { document.getElementById('mutate-results').innerHTML = '<div class="error">Invalid JSON</div>'; return }
-  document.getElementById('mutate-results').innerHTML = '<div class="placeholder">Mutating...</div>'
-  document.getElementById('mutate-sql').querySelector('pre').textContent = 'Sending...'
-  var token = getToken()
-  postJSON('mutate', m, token).then(function (b) {
-    var el = document.getElementById('mutate-results')
-    if (b.error) { el.innerHTML = '<div class="error">' + esc(b.error) + '</div>'; return }
-    renderTable(b.data, el)
-    document.getElementById('mutate-sql').querySelector('pre').textContent = 'Mutation succeeded.'
-  }).catch(function (e) {
-    document.getElementById('mutate-results').innerHTML = '<div class="error">' + esc(e.message) + '</div>'
-    document.getElementById('mutate-sql').querySelector('pre').textContent = e.message
-  })
-})
-
-document.getElementById('mutation-editor').addEventListener('keydown', function (e) {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') document.getElementById('mutate-btn').click()
-})
-
-document.getElementById('mutate-sample-select').addEventListener('change', function () {
-  var val = this.value;
-  if (!val) return;
-  setMutation(val);
-  switchTab('mutate');
-});
-
 // ── Init ──
 
 window.addEventListener('DOMContentLoaded', function () {
@@ -209,13 +157,9 @@ window.addEventListener('DOMContentLoaded', function () {
     }
     document.getElementById('routes-table-body').innerHTML = rh || '<tr><td colspan="3" class="placeholder">No routes.</td></tr>';
 
-    // Separate query vs mutation samples
-    var querySamples = samples.filter(function(s) { return !s.json.cube });
-    var mutateSamples = samples.filter(function(s) { return s.json.cube });
-
     var sel = document.getElementById('query-sample-select');
-    if (querySamples.length > 0) {
-      sel.innerHTML = querySamples.map(function (s) {
+    if (samples.length > 0) {
+      sel.innerHTML = samples.map(function (s) {
         var val = JSON.stringify(s.json).replace(/"/g, '&quot;');
         return '<option value="' + val + '">' + esc(s.name) + '</option>';
       }).join('');
@@ -223,20 +167,7 @@ window.addEventListener('DOMContentLoaded', function () {
       var evt = new Event('change');
       sel.dispatchEvent(evt);
     } else {
-      sel.innerHTML = '<option value="">No query samples</option>';
-    }
-
-    var msel = document.getElementById('mutate-sample-select');
-    if (mutateSamples.length > 0) {
-      msel.innerHTML = mutateSamples.map(function (s) {
-        var val = JSON.stringify(s.json).replace(/"/g, '&quot;');
-        return '<option value="' + val + '">' + esc(s.name) + '</option>';
-      }).join('');
-      msel.selectedIndex = 0;
-      var mevt = new Event('change');
-      msel.dispatchEvent(mevt);
-    } else {
-      msel.innerHTML = '<option value="">No mutation samples</option>';
+      sel.innerHTML = '<option value="">No samples</option>';
     }
 
     // Default query with first cube's first measure
@@ -298,40 +229,6 @@ const RESPONSE_EXAMPLE = `// /cube/query response
 
 // All endpoints return { "error": "..." } on failure (HTTP 400)`
 
-const MUTATION_REQUEST_EXAMPLE = `{
-  // ── Create ──
-  "cube": "Employees",
-  "operation": "create",              // "create" | "update" | "delete"
-  "values": {                         // required for create/update
-    "name": "Jane Doe",
-    "band": "E2",
-    "email": "jane@greencube.io",
-    "officeId": 1,
-    "departmentId": 1
-  }
-  // ── Update (requires filters) ──
-  // "operation": "update",
-  // "filters": [{ "member": "Employees.id", "operator": "equals", "values": ["1"] }]
-  //
-  // ── Delete (requires filters) ──
-  // "operation": "delete",
-  // "filters": [{ "member": "Employees.id", "operator": "equals", "values": ["250"] }]
-}`
-
-const AUTHORIZATION_DOCS = `// GreenCube uses JWT-based authorization for mutations.
-//
-// Roles:
-//   admin   — all cubes, all operations (create/update/delete)
-//   editor  — Employees and Productivity, create/update only
-//   viewer  — no mutation access
-//
-// Include the token as a Bearer header:
-//   Authorization: Bearer <token>
-//
-// The playground automatically attaches the auth token
-// (above) to all requests. Tokens are NOT verified —
-// any well-formed JWT is accepted (internal tool).`
-
 export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
   const app = new Hono()
 
@@ -352,22 +249,8 @@ export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
 
           <div class="tab-bar">
             <button type="button" class="tab-btn active" data-tab="query" onclick="switchTab('query')">Query</button>
-            <button type="button" class="tab-btn" data-tab="mutate" onclick="switchTab('mutate')">Mutate</button>
             <button type="button" class="tab-btn" data-tab="docs" onclick="switchTab('docs')">Docs</button>
           </div>
-
-          <details style="margin-bottom:8px">
-            <summary style="font-size:0.85rem;font-weight:400;color:#888">Authorization</summary>
-            <div class="input-row" style="margin-top:6px">
-              <input id="auth-token" type="text" placeholder="Paste JWT token, or click a role to generate one..." style="flex:1;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:0.82rem">
-              <span class="role-btn-group">
-                <button class="secondary small" onclick="setAuthRole('admin')">admin</button>
-                <button class="secondary small" onclick="setAuthRole('editor')">editor</button>
-                <button class="secondary small" onclick="setAuthRole('viewer')">viewer</button>
-              </span>
-            </div>
-            <p style="font-size:0.72rem;color:#999;margin:0">Select a role to auto-generate an unsigned JWT. Without a token, mutations are denied.</p>
-          </details>
 
           <div id="tab-query" class="tab-content active">
             <div style="display:flex;align-items:center;gap:20px;margin-bottom:6px">
@@ -389,22 +272,6 @@ export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
             </details>
           </div>
 
-          <div id="tab-mutate" class="tab-content">
-            <div style="display:flex;align-items:center;gap:20px;margin-bottom:6px">
-              <label class="label" style="margin-bottom:0;white-space:nowrap">Samples</label>
-              <select id="mutate-sample-select" style="width:max-content;font-size:0.82rem;padding:4px 6px;border:1px solid #ccc;border-radius:4px"><option value="">Loading...</option></select>
-            </div>
-            <label class="label" for="mutation-editor">Mutation JSON</label>
-            <textarea id="mutation-editor" rows="10">{\n  "cube": "Employees",\n  "operation": "create",\n  "values": {}\n}</textarea>
-            <div class="button-row">
-              <button class="primary" id="mutate-btn">&#9654; Run Mutation</button>
-            </div>
-            <h3 class="section-heading">Results</h3>
-            <div id="mutate-results" class="placeholder">Run a mutation to see results.</div>
-            <h3 class="section-heading">Status</h3>
-            <div id="mutate-sql"><pre class="highlight">&mdash;</pre></div>
-          </div>
-
           <div id="tab-docs" class="tab-content">
             <h3 class="section-heading">Cubes (<span id="cubes-count">...</span>)</h3>
             <table class="meta">
@@ -424,21 +291,6 @@ export function createTryApp(_cubes: ReadonlyMap<string, Cube>): Hono {
             <h3 class="section-heading">POST /cube/query — Response</h3>
             <pre>${RESPONSE_EXAMPLE}</pre>
 
-            <h3 class="section-heading">POST /cube/mutate — Request</h3>
-            <pre>${MUTATION_REQUEST_EXAMPLE}</pre>
-
-            <h3 class="section-heading">POST /cube/mutate — Response</h3>
-            <pre>// Success
-{ "data": [{ "id": 251, "name": "Jane Doe", ... }] }
-
-// Validation error (HTTP 400)
-{ "error": "create requires at least one value" }
-
-// Authorization error (HTTP 403)
-{ "error": "Not authorized" }</pre>
-
-            <h3 class="section-heading">Authorization</h3>
-            <pre>${AUTHORIZATION_DOCS}</pre>
           </div>
         </div>
 

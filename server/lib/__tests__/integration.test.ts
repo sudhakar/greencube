@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
-import type { SQLInputValue } from 'node:sqlite'
-import { DatabaseSync } from 'node:sqlite'
+import Database from 'better-sqlite3'
 import { before, describe, it } from 'node:test'
 import { SqliteDialect } from '../dialects/SqliteDialect.ts'
 import type { CompiledQuery, Cube, Query } from '../GreenCube.ts'
@@ -32,16 +31,16 @@ function compile(cubes: Map<string, Cube>, query: Query): CompiledQuery {
   return new CubeQueryCompiler(cubes, new SqliteDialect()).compile(query)
 }
 
-function execSql(db: DatabaseSync, compiled: CompiledQuery): Record<string, unknown>[] {
+function execSql(db: Database.Database, compiled: CompiledQuery): Record<string, unknown>[] {
   const stmt = db.prepare(compiled.sql)
-  return stmt.all(...(compiled.params as SQLInputValue[])) as Record<string, unknown>[]
+  return stmt.all(...compiled.params) as Record<string, unknown>[]
 }
 
-let db: DatabaseSync
+let db: Database.Database
 let cubes: Map<string, Cube>
 
 before(() => {
-  db = new DatabaseSync(':memory:')
+  db = new Database(':memory:')
   seed(db)
   cubes = makeSqliteCubes()
 })

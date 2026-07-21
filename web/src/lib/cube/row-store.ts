@@ -1,5 +1,4 @@
-import { type Fetcher, fetcher } from "./fetcher.ts";
-import type { Filter, Query } from "./types.ts";
+import type { Query } from "./types.ts";
 
 export class RowStore {
 	private data = new Map<string, Map<string, Record<string, unknown>>>();
@@ -113,35 +112,4 @@ function cubeFromQuery(q: Query): string | null {
 	return cubes.size === 1 ? cubes.values().next().value! : null;
 }
 
-export class Mutator {
-	private fetch: Fetcher;
-
-	constructor(fetch?: Fetcher) {
-		this.fetch = fetch ?? fetcher();
-	}
-
-	create(
-		cube: string,
-		values: Record<string, unknown>,
-	): Promise<{ data: Record<string, unknown>[] }> {
-		return this.fetch("/mutate", { cube, operation: "create", values });
-	}
-
-	update(
-		cube: string,
-		values: Record<string, unknown>,
-		filters: Filter[],
-	): Promise<{ data: Record<string, unknown>[] }> {
-		return this.fetch("/mutate", { cube, operation: "update", values, filters });
-	}
-
-	delete(
-		cube: string,
-		filters: Filter[],
-	): Promise<{ data: Record<string, unknown>[] }> {
-		return this.fetch("/mutate", { cube, operation: "delete", filters });
-	}
-}
-
 export const rowStore = new RowStore();
-export const mutator = new Mutator();

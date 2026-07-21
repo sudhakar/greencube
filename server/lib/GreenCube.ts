@@ -196,6 +196,14 @@ export interface CompiledQuery {
   params: unknown[]
 }
 
+export interface DataSource {
+  dialect: Dialect
+  run(sql: string, params?: unknown[]): Promise<{
+    data: Record<string, unknown>[]
+    rowsAffected?: number
+  }>
+}
+
 export interface ValidationError {
   type: 'cube_not_found' | 'measure_not_found' | 'dimension_not_found' | 'time_dimension_not_found' | 'invalid_filter'
   message: string
