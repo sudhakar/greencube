@@ -5,43 +5,49 @@ import type { Fetcher } from "../fetcher.ts";
 
 type Row = Record<string, unknown>;
 
+function makeFetch(
+	override?: Partial<{ data: Row[]; meta: any; sql: string }>,
+): Fetcher {
+	const meta = override?.meta ?? { cubes: [], samples: [], routes: [] };
+	const sql = override?.sql ?? "SELECT 1";
+	return ((path: string, body?: object) => {
+		if (path === "/meta") return Promise.resolve(meta);
+		if (path === "/explain") return Promise.resolve({ sql });
+		const q = body as any;
+		const cols: string[] = [
+			...(q?.measures ?? []),
+			...(q?.dimensions ?? []),
+			...(q?.timeDimensions ?? []).map((td: any) => td.dimension),
+		];
+		const raw = override?.data;
+		const rows = raw
+			? raw.map((row) => {
+					const r: Row = {};
+					for (const c of cols) r[c] = c in row ? row[c] : 1;
+					return r;
+				})
+			: [(() => { const r: Row = {}; for (const c of cols) r[c] = 1; return r; })()];
+		return Promise.resolve({ data: rows });
+	}) as Fetcher;
+}
+
 describe("Cube", () => {
 	let calls: { path: string; body?: object }[];
 	let cube: Cube;
 
 	beforeEach(() => {
 		calls = [];
-		const fetch = ((path: string, body?: object) => {
+		const fetch = makeFetch();
+		const recorded = ((path: string, body?: object) => {
 			calls.push({ path, body });
-			if (path === "/meta") {
-				return Promise.resolve({
-					cubes: [],
-					samples: [],
-					routes: [],
-				});
-			}
-			if (path === "/explain") {
-				return Promise.resolve({ sql: "SELECT 1" });
-			}
-			if (path === "/mutate") {
-				return Promise.resolve({ data: [{ id: 1, name: "created" }] });
-			}
-			const q = body as any;
-			const cols: string[] = [
-				...(q?.measures ?? []),
-				...(q?.dimensions ?? []),
-				...(q?.timeDimensions ?? []).map((td: any) => td.dimension),
-			];
-			const row: Row = {};
-			for (const c of cols) row[c] = 1;
-			return Promise.resolve({ data: [row] });
+			return fetch(path, body);
 		}) as Fetcher;
-		cube = new Cube(fetch);
+		cube = new Cube(recorded);
 	});
 
 	describe("query", () => {
 		it("returns cached data on hit", async () => {
-			cube.cache.set({ measures: ["a"] }, [{ a: 1 }]);
+			cube.colStore.set({ measures: ["a"] }, [{ a: 1 }]);
 			const r = await cube.query({ measures: ["a"] });
 			assert.deepEqual(r, [{ a: 1 }]);
 			assert.equal(calls.length, 0);
@@ -57,7 +63,7 @@ describe("Cube", () => {
 		});
 
 		it("partial hit fetches only missing columns", async () => {
-			cube.cache.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
+			cube.colStore.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
 			await cube.query({ measures: ["a", "b"], filters: [] });
 			assert.equal(calls.length, 1);
 			const fetchQ = calls[0].body as any;
@@ -72,37 +78,24 @@ describe("Cube", () => {
 		});
 
 		it("partial fetch merges with cached columns", async () => {
-			cube.cache.set({ measures: ["a"], filters: [] }, [{ a: 10 }]);
+			cube.colStore.set({ measures: ["a"], filters: [] }, [{ a: 10 }]);
 			const r = await cube.query({ measures: ["a", "b"], filters: [] });
-			assert.equal(r[0].a, 10); // preserved from original
-			assert.equal(r[0].b, 1); // from partial fetch
+			assert.equal(r[0].a, 10);
+			assert.equal(r[0].b, 1);
 		});
 
 		it("returns same ref on repeated partial queries", async () => {
-			cube.cache.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
+			cube.colStore.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
 			await cube.query({ measures: ["a", "b"], filters: [] });
 			const r1 = await cube.query({ measures: ["a", "b"], filters: [] });
 			const r2 = await cube.query({ measures: ["a", "b"], filters: [] });
 			assert.equal(r1, r2);
 		});
 
-		it("grouped vs ungrouped use different fingerprints", async () => {
+		it("grouped vs ungrouped use different stores", async () => {
 			await cube.query({ measures: ["a"], dimensions: ["d"] });
 			await cube.query({ measures: ["a"], dimensions: ["d"], ungrouped: true });
 			assert.equal(calls.length, 2);
-		});
-
-		it("partial hit in ungrouped mode fetches only missing dimensions", async () => {
-			cube.cache.set(
-				{ dimensions: ["d1"], ungrouped: true, filters: [] },
-				[{ d1: "x" }],
-			);
-			await cube.query(
-				{ dimensions: ["d1", "d2"], ungrouped: true, filters: [] },
-			);
-			assert.equal(calls.length, 1);
-			const fetchQ = calls[0].body as any;
-			assert.deepEqual(fetchQ.dimensions, ["d2"]);
 		});
 
 		it("rejects when fetch fails", async () => {
@@ -113,11 +106,11 @@ describe("Cube", () => {
 			);
 		});
 
-		it("does not populate cache on fetch failure", async () => {
+		it("does not populate colStore on fetch failure", async () => {
 			const c = new Cube(() => Promise.reject(new Error("fail")));
 			const q = { measures: ["x"], filters: [] };
 			await c.query(q).catch(() => {});
-			assert.equal(c.cache.get(q), null);
+			assert.equal(c.colStore.get(q), null);
 		});
 
 		it("allows re-fetch after previous failure", async () => {
@@ -128,10 +121,108 @@ describe("Cube", () => {
 			const c = new Cube(flakyFetch);
 			const q = { measures: ["x"], filters: [] };
 			await c.query(q).catch(() => {});
-			assert.equal(c.cache.get(q), null);
+			assert.equal(c.colStore.get(q), null);
 			fail = false;
 			const r = await c.query(q);
 			assert.deepEqual(r, [{ x: 1 }]);
+		});
+
+		it("ungrouped query seeds and caches in rowStore", async () => {
+			const c = new Cube(makeFetch({ data: [{ "Orders.id": 1, "Orders.amount": 100 }] }));
+			const q = { measures: ["Orders.amount"], dimensions: ["Orders.id"], ungrouped: true };
+			const r = await c.query(q);
+			assert.deepEqual(r, [{ "Orders.id": 1, "Orders.amount": 100 }]);
+			assert.ok(c.rowStore.isSeeded("Orders"));
+			assert.deepEqual(c.rowStore.get("Orders", { "Orders.id": 1 }), {
+				"Orders.id": 1,
+				"Orders.amount": 100,
+			});
+		});
+
+		it("ungrouped second call returns from rowStore", async () => {
+			let count = 0;
+			const fetch = ((path: string, body?: object) => {
+				count++;
+				return makeFetch({ data: [{ "Orders.id": 1 }] })(path, body);
+			}) as Fetcher;
+			const c = new Cube(fetch);
+			const q = { measures: ["Orders.amount"], dimensions: ["Orders.id"], ungrouped: true };
+			await c.query(q);
+			await c.query(q);
+			assert.equal(count, 1);
+		});
+
+		it("grouped query does not seed rowStore", async () => {
+			await cube.query({ measures: ["a"], dimensions: ["d"] });
+			assert.equal(cube.rowStore.size, 0);
+		});
+
+		it("multi-cube ungrouped query does not seed rowStore", async () => {
+			const c = new Cube(makeFetch());
+			await c.query({
+				measures: ["Orders.amount", "Customers.total"],
+				dimensions: ["Orders.id", "Customers.name"],
+				ungrouped: true,
+			});
+			assert.equal(c.rowStore.size, 0);
+		});
+
+		it("empty result does not seed rowStore", async () => {
+			const c = new Cube(makeFetch({ data: [] }));
+			await c.query({
+				measures: ["Orders.amount"],
+				dimensions: ["Orders.id"],
+				ungrouped: true,
+			});
+			assert.equal(c.rowStore.size, 0);
+		});
+
+		it("ungrouped without dimensions does not seed", async () => {
+			const c = new Cube(makeFetch());
+			await c.query({ measures: ["Orders.amount"], ungrouped: true });
+			assert.equal(c.rowStore.size, 0);
+		});
+
+		it("timeDimensions as key fields", async () => {
+			const c = new Cube(
+				makeFetch({ data: [{ "Orders.ts": "2024-01-01", "Orders.amount": 50 }] }),
+			);
+			await c.query({
+				measures: ["Orders.amount"],
+				timeDimensions: [{ dimension: "Orders.ts", granularity: "day" }],
+				ungrouped: true,
+			});
+			assert.ok(c.rowStore.isSeeded("Orders"));
+			assert.deepEqual(
+				c.rowStore.get("Orders", { "Orders.ts": "2024-01-01" }),
+				{ "Orders.ts": "2024-01-01", "Orders.amount": 50 },
+			);
+		});
+	});
+
+	describe("refetch", () => {
+		it("forces a new fetch for grouped query", async () => {
+			const q = { measures: ["a"] };
+			await cube.query(q);
+			assert.equal(calls.filter((c) => c.path === "/query").length, 1);
+			await cube.refetch(q);
+			assert.equal(calls.filter((c) => c.path === "/query").length, 2);
+		});
+
+		it("forces a new fetch for ungrouped query", async () => {
+			let count = 0;
+			const fetch = ((path: string, body?: object) => {
+				count++;
+				return makeFetch({ data: [{ "Orders.id": 1 }] })(path, body);
+			}) as Fetcher;
+			const c = new Cube(fetch);
+			const q = { measures: ["Orders.amount"], dimensions: ["Orders.id"], ungrouped: true };
+			await c.query(q);
+			await c.query(q); // rowStore hit
+			assert.equal(count, 1);
+			await c.refetch(q);
+			assert.equal(count, 2);
+			assert.ok(c.rowStore.isSeeded("Orders"));
 		});
 	});
 
@@ -142,7 +233,7 @@ describe("Cube", () => {
 			assert.equal(calls[0].path, "/meta");
 			assert.ok(m.cubes);
 			const m2 = await cube.meta();
-			assert.equal(calls.length, 1); // cached, no second fetch
+			assert.equal(calls.length, 1);
 			assert.equal(m, m2);
 		});
 	});
@@ -154,50 +245,6 @@ describe("Cube", () => {
 			assert.equal(calls[0].path, "/explain");
 			assert.deepEqual(calls[0].body, { measures: ["a"] });
 			assert.deepEqual(result, { sql: "SELECT 1" });
-		});
-	});
-
-	describe("mutate", () => {
-		it("posts mutation and returns data", async () => {
-			const result = await cube.mutate({
-				cube: "Customers",
-				operation: "create",
-				values: { name: "new" },
-			});
-			assert.equal(calls.length, 1);
-			assert.equal(calls[0].path, "/mutate");
-			assert.deepEqual(calls[0].body, {
-				cube: "Customers",
-				operation: "create",
-				values: { name: "new" },
-			});
-			assert.deepEqual(result, { data: [{ id: 1, name: "created" }] });
-		});
-
-		it("sends update with filters", async () => {
-			await cube.mutate({
-				cube: "Customers",
-				operation: "update",
-				values: { country: "CA" },
-				filters: [{ member: "name", operator: "equals", values: ["Alice"] }],
-			});
-			assert.equal(calls[0].path, "/mutate");
-			assert.deepEqual(calls[0].body, {
-				cube: "Customers",
-				operation: "update",
-				values: { country: "CA" },
-				filters: [{ member: "name", operator: "equals", values: ["Alice"] }],
-			});
-		});
-
-		it("sends delete with filters", async () => {
-			await cube.mutate({
-				cube: "Customers",
-				operation: "delete",
-				filters: [{ member: "name", operator: "equals", values: ["Grace"] }],
-			});
-			assert.equal(calls.length, 1);
-			assert.equal((calls[0].body as any).operation, "delete");
 		});
 	});
 });

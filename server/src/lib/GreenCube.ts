@@ -127,6 +127,7 @@ export interface CubeJoin {
 export interface Cube {
   name: string
   sql: string
+  pk?: string[]
   where?: string | ((ctx: QueryContext) => string)
   dimensions: Record<string, Dimension>
   measures: Record<string, Measure>

@@ -15,16 +15,6 @@ export interface Filter {
 	values?: unknown[];
 }
 
-export type MutationOp = "create" | "update" | "delete";
-
-export interface Mutation {
-	cube: string;
-	operation: MutationOp;
-	values?: Record<string, unknown>;
-	filters?: Filter[];
-	returning?: string[];
-}
-
 export interface Query {
 	measures?: string[];
 	dimensions?: string[];
@@ -44,6 +34,7 @@ export interface Field {
 
 export interface Cube {
 	name: string;
+	pk?: string[];
 	measures: Field[];
 	dimensions: Field[];
 	timeDimensions: Field[];

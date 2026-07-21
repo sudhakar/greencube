@@ -36,6 +36,7 @@ import { type Cube, defineCube } from './lib/GreenCube.ts'
 
 export const employeesCube = defineCube('Employees', {
   sql: 'analytics.employees e',
+  pk: ['id'],
   sampleQueries: [
     'employee count by band and country, top 5 bands',
     'average, median, min, max, stddev, variance, p95 and p99 salary by nationality',
@@ -136,6 +137,7 @@ export const employeesCube = defineCube('Employees', {
 
 export const departmentsCube = defineCube('Departments', {
   sql: 'analytics.departments d',
+  pk: ['id'],
   sampleQueries: [
     'total departments, average budget and median budget',
     'top 5 departments by total budget and average budget',
@@ -181,6 +183,7 @@ export const departmentsCube = defineCube('Departments', {
 
 export const officesCube = defineCube('Offices', {
   sql: 'analytics.offices o',
+  pk: ['id'],
   sampleQueries: [
     'office count by country and region, top 10',
     'total offices and average employee count per office by country',
@@ -213,6 +216,7 @@ export const officesCube = defineCube('Offices', {
 
 export const productivityCube = defineCube('Productivity', {
   sql: 'analytics.productivity p',
+  pk: ['id'],
   sampleQueries: [
     'total lines of code and average pull requests, top 5',
     'total lines of code, pull requests and deployments per month, last 6 months',
@@ -351,6 +355,7 @@ export const productivityCube = defineCube('Productivity', {
 
 export const performanceReviewsCube = defineCube('PerformanceReviews', {
   sql: 'analytics.performance_reviews pr',
+  pk: ['id'],
   sampleQueries: [
     'average performance rating per month, last 12 months',
     'average, min, max, median, p95, p99, stddev and variance rating by employee',
@@ -448,6 +453,7 @@ export const performanceReviewsCube = defineCube('PerformanceReviews', {
 
 export const prEventsCube = defineCube('PREvents', {
   sql: 'analytics.pr_events pre',
+  pk: ['id'],
   sampleQueries: [
     'PR events count by event type, top 5 types',
     'number of PR events, unique PRs and unique actors',
@@ -480,6 +486,7 @@ export const prEventsCube = defineCube('PREvents', {
 
 export const teamsCube = defineCube('Teams', {
   sql: 'analytics.teams t',
+  pk: ['id'],
   sampleQueries: [
     'teams count by department, top 10',
     'team count and employee team count by team name, top 5',
@@ -514,6 +521,7 @@ export const teamsCube = defineCube('Teams', {
 
 export const employeeTeamsCube = defineCube('EmployeeTeams', {
   sql: 'analytics.employee_teams et',
+  pk: ['id'],
   sampleQueries: [
     'team membership count by role, top 5 roles',
     'lead count per team over time, last 6 months',
@@ -555,6 +563,7 @@ export const employeeTeamsCube = defineCube('EmployeeTeams', {
 
 export const skillsCube = defineCube('Skills', {
   sql: 'analytics.skills s',
+  pk: ['id'],
   sampleQueries: [
     'skill count and distinct categories by category, top 10 categories',
   ],
@@ -584,6 +593,7 @@ export const skillsCube = defineCube('Skills', {
 
 export const employeeSkillsCube = defineCube('EmployeeSkills', {
   sql: 'analytics.employee_skills es',
+  pk: ['id'],
   sampleQueries: [
     'average employee skill proficiency, top 10 employees',
     'average, median, max and min proficiency by skill name and category',

@@ -12,6 +12,7 @@ export function formatMeta(
 ) {
   const result: Array<{
     name: string
+    pk?: string[]
     measures: { name: string; title: string; type: string }[]
     dimensions: { name: string; title: string; type: string }[]
     timeDimensions: { name: string; title: string; type: string }[]
@@ -31,7 +32,7 @@ export function formatMeta(
       if (d.type === 'time') timeDimensions.push(entry)
       else dimensions.push(entry)
     }
-    result.push({ name, measures, dimensions, timeDimensions, sampleQueries: cube.sampleQueries })
+    result.push({ name, pk: cube.pk, measures, dimensions, timeDimensions, sampleQueries: cube.sampleQueries })
   }
   const meta: Record<string, unknown> = { cubes: result }
   if (routes) {

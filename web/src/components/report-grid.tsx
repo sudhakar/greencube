@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import GridLayout, { type LayoutItem, useContainerWidth } from 'react-grid-layout'
 import { useReports } from '@/context/ReportContext'
-import { useFetch } from '@/hooks/useFetch'
+import { useCube } from '@/hooks/useCube'
 import type { WidgetInstance } from '@/lib/types'
 import { AreaWidget } from '@/widgets/AreaWidget'
 import { BarWidget } from '@/widgets/BarWidget'
@@ -19,7 +19,7 @@ interface WidgetRendererProps {
 }
 
 function WidgetRenderer({ widget, onEdit, onClone, onDelete }: WidgetRendererProps) {
-  const { data, isLoading, error, refetch } = useFetch(widget.query)
+  const { data, isLoading, error, refetch } = useCube(widget.query)
 
   const hasData = !isLoading && !error && data.length > 0
 

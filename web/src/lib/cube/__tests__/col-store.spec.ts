@@ -1,46 +1,46 @@
 import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { QueryCache } from "../cache.ts";
+import { ColStore } from "../col-store.ts";
 
 // ── fingerprint ──────────────────────────────────────────────────────────────
 
 describe("fingerprint", () => {
 	it("strips measures", () => {
 		assert.equal(
-			QueryCache.fingerprint({ measures: ["a"], filters: [] }),
-			QueryCache.fingerprint({ measures: ["a", "b"], filters: [] }),
+			ColStore.fingerprint({ measures: ["a"], filters: [] }),
+			ColStore.fingerprint({ measures: ["a", "b"], filters: [] }),
 		);
 	});
 
 	it("includes dimensions in grouped mode", () => {
 		assert.notEqual(
-			QueryCache.fingerprint({ measures: ["a"], dimensions: ["d"] }),
-			QueryCache.fingerprint({ measures: ["a"] }),
+			ColStore.fingerprint({ measures: ["a"], dimensions: ["d"] }),
+			ColStore.fingerprint({ measures: ["a"] }),
 		);
 	});
 
 	it("excludes dimensions when ungrouped", () => {
 		assert.equal(
-			QueryCache.fingerprint({ measures: ["a"], dimensions: ["d"], ungrouped: true }),
-			QueryCache.fingerprint({ measures: ["a"], ungrouped: true }),
+			ColStore.fingerprint({ measures: ["a"], dimensions: ["d"], ungrouped: true }),
+			ColStore.fingerprint({ measures: ["a"], ungrouped: true }),
 		);
 	});
 
 	it("excludes timeDimensions when ungrouped", () => {
 		assert.equal(
-			QueryCache.fingerprint({
+			ColStore.fingerprint({
 				measures: ["a"],
 				timeDimensions: [{ dimension: "d", granularity: "month" }],
 				ungrouped: true,
 			}),
-			QueryCache.fingerprint({ measures: ["a"], ungrouped: true }),
+			ColStore.fingerprint({ measures: ["a"], ungrouped: true }),
 		);
 	});
 
 	it("sorts keys", () => {
 		assert.equal(
-			QueryCache.fingerprint({ order: { x: "asc" }, filters: [] }),
-			QueryCache.fingerprint({ filters: [], order: { x: "asc" } }),
+			ColStore.fingerprint({ order: { x: "asc" }, filters: [] }),
+			ColStore.fingerprint({ filters: [], order: { x: "asc" } }),
 		);
 	});
 });
@@ -50,14 +50,14 @@ describe("fingerprint", () => {
 describe("selectCols", () => {
 	it("returns measures in grouped mode", () => {
 		assert.deepEqual(
-			QueryCache.selectCols({ measures: ["a", "b"], dimensions: ["c"] }),
+			ColStore.selectCols({ measures: ["a", "b"], dimensions: ["c"] }),
 			["a", "b"],
 		);
 	});
 
 	it("includes dims + timeDims when ungrouped", () => {
 		assert.deepEqual(
-			QueryCache.selectCols({
+			ColStore.selectCols({
 				measures: ["m"],
 				dimensions: ["d"],
 				timeDimensions: [{ dimension: "d", granularity: "month" }],
@@ -68,7 +68,7 @@ describe("selectCols", () => {
 	});
 
 	it("returns empty for empty query", () => {
-		assert.deepEqual(QueryCache.selectCols({}), []);
+		assert.deepEqual(ColStore.selectCols({}), []);
 	});
 });
 
@@ -77,7 +77,7 @@ describe("selectCols", () => {
 describe("allCols", () => {
 	it("returns measures + dims + timeDims", () => {
 		assert.deepEqual(
-			QueryCache.allCols({
+			ColStore.allCols({
 				measures: ["m"],
 				dimensions: ["d"],
 				timeDimensions: [{ dimension: "t", granularity: "month" }],
@@ -88,19 +88,19 @@ describe("allCols", () => {
 
 	it("includes dimensions in grouped mode", () => {
 		assert.deepEqual(
-			QueryCache.allCols({ measures: ["m"], dimensions: ["d"] }),
+			ColStore.allCols({ measures: ["m"], dimensions: ["d"] }),
 			["m", "d"],
 		);
 	});
 });
 
-// ── QueryCache instance ──────────────────────────────────────────────────────
+// ── ColStore instance ──────────────────────────────────────────────────────
 
-describe("QueryCache", () => {
-	let c: QueryCache;
+describe("ColStore", () => {
+	let c: ColStore;
 
 	beforeEach(() => {
-		c = new QueryCache();
+		c = new ColStore();
 	});
 
 	describe("get / set", () => {
@@ -149,7 +149,7 @@ describe("QueryCache", () => {
 		});
 
 		it("keeps multiple materialized subsets after pure partial fill", () => {
-			const fp = (q: object) => QueryCache.fingerprint(q);
+			const fp = (q: object) => ColStore.fingerprint(q);
 			const rows = (q: object) => (c as any).entries.get(fp(q)).rows;
 
 			c.set({ measures: ["a"], filters: [] }, [{ a: 1 }]);
@@ -162,7 +162,7 @@ describe("QueryCache", () => {
 		});
 
 		it("grouped partial fill keeps subset for original columns", () => {
-			const fp = (q: object) => QueryCache.fingerprint(q);
+			const fp = (q: object) => ColStore.fingerprint(q);
 			const rows = (q: object) => (c as any).entries.get(fp(q)).rows;
 
 			const q1 = { measures: ["a"], dimensions: ["d"], filters: [] };
@@ -208,7 +208,7 @@ describe("QueryCache", () => {
 
 		it("clears associated inflight promises", async () => {
 			const q = { measures: ["x"], filters: [] };
-			const fp = QueryCache.fingerprint(q);
+			const fp = ColStore.fingerprint(q);
 			c.dedup(fp + "|x", async () => "old");
 			c.invalidate(q);
 			const val = await c.dedup(fp + "|x", async () => "new");
@@ -236,13 +236,66 @@ describe("QueryCache", () => {
 
 	describe("eviction", () => {
 		it("FIFO when over max entries", () => {
-			const c2 = new QueryCache(2);
+			const c2 = new ColStore(2);
 			c2.set({ measures: ["a"], filters: [{ member: "a" }] }, [{ a: 1 }]);
 			c2.set({ measures: ["b"], filters: [{ member: "b" }] }, [{ b: 2 }]);
 			c2.set({ measures: ["c"], filters: [{ member: "c" }] }, [{ c: 3 }]);
 			assert.equal(c2.get({ measures: ["a"], filters: [{ member: "a" }] }), null);
 			assert.ok(c2.get({ measures: ["b"], filters: [{ member: "b" }] }));
 			assert.ok(c2.get({ measures: ["c"], filters: [{ member: "c" }] }));
+		});
+	});
+
+	describe("invalidateCube", () => {
+		it("removes entries touching the given cube", () => {
+			const f1 = { member: "x", operator: "equals" as const, values: [1] };
+			const f2 = { member: "y", operator: "equals" as const, values: [1] };
+			c.set({ measures: ["Orders.amount"], filters: [f1] }, [{ "Orders.amount": 100 }]);
+			c.set({ measures: ["Customers.total"], filters: [f2] }, [{ "Customers.total": 50 }]);
+			assert.ok(c.get({ measures: ["Orders.amount"], filters: [f1] }));
+			assert.ok(c.get({ measures: ["Customers.total"], filters: [f2] }));
+			c.invalidateCube("Orders");
+			assert.equal(c.get({ measures: ["Orders.amount"], filters: [f1] }), null);
+			assert.ok(c.get({ measures: ["Customers.total"], filters: [f2] }));
+		});
+
+		it("no-ops on cube with no entries", () => {
+			c.invalidateCube("Ghost");
+			assert.equal(c.size, 0);
+		});
+
+		it("clears associated inflight promises", async () => {
+			const filters = [{ member: "z", operator: "equals" as const, values: [1] }];
+			const q = { measures: ["Orders.x"], filters };
+			const fp = ColStore.fingerprint(q) + "|Orders.x";
+			await c.dedup(fp, async () => "old");
+			await c.dedup(fp, async () => "first"); // wait for inflight to clear
+			c.dedup(fp, async () => "old");
+			c.set(q, [{ "Orders.x": 1 }]);
+			c.invalidateCube("Orders");
+			const val = await c.dedup(fp, async () => "new");
+			assert.equal(val, "new");
+		});
+
+		it("skips entries with unqualified column names", () => {
+			c.set({ measures: ["amount"], filters: [] }, [{ amount: 100 }]);
+			c.invalidateCube("Orders");
+			assert.ok(c.get({ measures: ["amount"], filters: [] }));
+		});
+
+		it("removes entries with multiple cubes when one matches", () => {
+			c.set(
+				{ measures: ["Orders.amount", "Customers.total"], filters: [] },
+				[{ "Orders.amount": 100, "Customers.total": 50 }],
+			);
+			assert.ok(
+				c.get({ measures: ["Orders.amount", "Customers.total"], filters: [] }),
+			);
+			c.invalidateCube("Orders");
+			assert.equal(
+				c.get({ measures: ["Orders.amount", "Customers.total"], filters: [] }),
+				null,
+			);
 		});
 	});
 
@@ -269,8 +322,8 @@ describe("QueryCache", () => {
 			c.retain(q);
 			c.set(q, [{ a: 1 }]);
 			c.get(q); // materialize
-			const fp = QueryCache.fingerprint(q);
-			const ck = QueryCache.allCols(q).sort().join(",");
+			const fp = ColStore.fingerprint(q);
+			const ck = ColStore.allCols(q).sort().join(",");
 			c.release(q); // ref 2→1, row stays
 			assert.ok((c as any).entries.get(fp).rows.get(ck));
 			c.release(q); // ref 1→0, row deleted
@@ -283,7 +336,7 @@ describe("QueryCache", () => {
 			c.set(q, [{ a: 1 }]);
 			c.get(q); // materialize
 			c.release(q);
-			const e = (c as any).entries.get(QueryCache.fingerprint(q));
+			const e = (c as any).entries.get(ColStore.fingerprint(q));
 			assert.ok(e);
 			assert.ok(e.cols.get("a"));
 			assert.equal(e.rows.size, 0);
@@ -304,12 +357,12 @@ describe("QueryCache", () => {
 			c.set(q2, [{ b: 10 }]);
 			c.get(q1);
 			c.get(q2);
-			const fp = QueryCache.fingerprint(q1);
+			const fp = ColStore.fingerprint(q1);
 			c.release(q1);
 			// q1's row freed, q2's row remains
 			const e = (c as any).entries.get(fp);
-			const ck1 = QueryCache.allCols(q1).sort().join(",");
-			const ck2 = QueryCache.allCols(q2).sort().join(",");
+			const ck1 = ColStore.allCols(q1).sort().join(",");
+			const ck2 = ColStore.allCols(q2).sort().join(",");
 			assert.equal(e.rows.has(ck1), false);
 			assert.ok(e.rows.get(ck2));
 		});

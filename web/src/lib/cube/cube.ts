@@ -1,12 +1,13 @@
-import { QueryCache } from "./cache.ts";
-import type { Mutation, Query } from "./types.ts";
-import type { CubeMeta, QueryResult } from "./types.ts";
+import { ColStore } from "./col-store.ts";
 import { type Fetcher, fetcher } from "./fetcher.ts";
+import { RowStore } from "./row-store.ts";
+import type { CubeMeta, Query, QueryResult } from "./types.ts";
 
 type Row = Record<string, unknown>;
 
 export class Cube {
-	cache = new QueryCache();
+	public colStore = new ColStore();
+	public rowStore = new RowStore();
 	private fetch: Fetcher;
 	private metaPromise: Promise<CubeMeta> | null = null;
 
@@ -21,56 +22,59 @@ export class Cube {
 	}
 
 	async query(q: Query): Promise<Row[]> {
-		const cached = this.cache.get(q);
+		if (q.ungrouped) return this.queryUngrouped(q);
+		return this.queryGrouped(q);
+	}
+
+	private async queryUngrouped(q: Query): Promise<Row[]> {
+		const cached = this.rowStore.getByQuery(q);
+		if (cached) return cached;
+		const res = await this.fetch<QueryResult>("/query", q);
+		this.rowStore.setByQuery(q, res.data);
+		return res.data;
+	}
+
+	private async queryGrouped(q: Query): Promise<Row[]> {
+		const cached = this.colStore.get(q);
 		if (cached) return cached;
 
-		const need = this.cache.missing(q);
+		const need = this.colStore.missing(q);
 		const fetchQ =
-			need.length < QueryCache.selectCols(q).length
+			need.length < ColStore.selectCols(q).length
 				? partialQuery(q, need)
 				: q;
 
 		const dedupKey =
-			QueryCache.fingerprint(q) + "|" + need.sort().join(",");
-		await this.cache.dedup(dedupKey, () =>
+			ColStore.fingerprint(q) + "|" + need.sort().join(",");
+		await this.colStore.dedup(dedupKey, () =>
 			this.fetch<QueryResult>("/query", fetchQ).then((res) => {
-				this.cache.set(q, res.data);
+				this.colStore.set(q, res.data);
 			}),
 		);
 
-		return this.cache.get(q)!;
+		return this.colStore.get(q)!;
+	}
+
+	async refetch(q: Query): Promise<Row[]> {
+		if (q.ungrouped) {
+			this.rowStore.invalidateByQuery(q);
+		} else {
+			this.colStore.invalidate(q);
+		}
+		return this.query(q);
 	}
 
 	async explain(q: Query): Promise<{ sql: string }> {
 		return this.fetch<{ sql: string }>("/explain", q);
-	}
-
-	async mutate(m: Mutation): Promise<QueryResult> {
-		return this.fetch<QueryResult>("/mutate", m);
 	}
 }
 
 function partialQuery(q: Query, need: string[]) {
 	const needSet = new Set(need);
 	const fq = { ...q };
-
 	if (q.measures) {
-		const m = q.measures.filter((x) => needSet.has(x));
-		if (m.length) fq.measures = m;
+		fq.measures = q.measures.filter((x) => needSet.has(x));
 	}
-
-	if (q.dimensions) {
-		fq.dimensions = q.ungrouped
-			? q.dimensions.filter((x) => needSet.has(x))
-			: q.dimensions;
-	}
-
-	if (q.timeDimensions) {
-		fq.timeDimensions = q.ungrouped
-			? q.timeDimensions.filter((x) => needSet.has(x.dimension))
-			: q.timeDimensions;
-	}
-
 	return fq;
 }
 

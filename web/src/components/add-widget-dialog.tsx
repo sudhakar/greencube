@@ -22,7 +22,7 @@ import { InputGroup, InputGroupButton, InputGroupTextarea } from '@/components/u
 import { Toggle } from '@/components/ui/toggle'
 import { AlignWidget, CompactAddButton, CompactArrayFieldTemplate, CompactArrayFieldTitleTemplate, CompactArrayItemTemplate, CompactObjectFieldTemplate, FieldSelect, FlatFormatList, FormatSelect, MultiFieldSelect, PrefixSelect, TitleWidget, XsBaseInputTemplate } from '@/components/widget-config'
 import { useReports } from '@/context/ReportContext'
-import { useFetch } from '@/hooks/useFetch'
+import { useCube } from '@/hooks/useCube'
 import { cube } from '@/lib/cube/cube'
 import type { Query } from '@/lib/cube/types'
 import { fieldType } from '@/lib/meta'
@@ -79,7 +79,7 @@ export function AddWidgetDialog({ open, onOpenChange, editingWidget }: AddWidget
   const [step, setStep] = useState<'fields' | 'configure'>('fields')
   const [showQuery, setShowQuery] = useState(false)
 
-  const { data: previewData, isLoading: previewLoading, error } = useFetch(committedQuery)
+  const { data: previewData, isLoading: previewLoading, error } = useCube(committedQuery)
   const previewError = parseError ?? error
 
   useEffect(() => {
